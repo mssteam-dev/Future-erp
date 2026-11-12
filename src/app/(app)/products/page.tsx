@@ -53,11 +53,10 @@ export default async function ProductsPage({
 
       <ProductForm categories={categories as never} uoms={uoms as never} />
 
-      <form method="get" className="card no-print"
-            style={{ padding: 12, marginBottom: 16, display: "flex", gap: 10, alignItems: "flex-end" }}>
-        <div>
+      <form method="get" className="card filters no-print">
+        <div className="filter-field" style={{ width: 280 }}>
           <label className="label">التصنيف</label>
-          <select name="category" className="select" defaultValue={category ?? ""} style={{ width: 280 }}>
+          <select name="category" className="select" defaultValue={category ?? ""}>
             <option value="">كل التصنيفات</option>
             {categories.map((c) => (
               <option key={c.id} value={c.id}>
@@ -132,7 +131,7 @@ export default async function ProductsPage({
         )}
       </Card>
 
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(340px,1fr))", gap: 16 }}>
+      <div className="grid-cards">
         <Card title="التصنيفات">
           <p style={{ fontSize: 13.5, color: "var(--muted)", marginTop: 0 }}>
             شجرة تصنيفات حتى خمسة مستويات: تصنيف رئيسي وتحته تصنيفات فرعية.
@@ -151,7 +150,7 @@ export default async function ProductsPage({
         </Card>
 
         <Card title="وحدات القياس">
-          <form action={saveUom} style={{ display: "flex", gap: 8, alignItems: "flex-end", marginBottom: 12 }}>
+          <form action={saveUom} style={{ display: "flex", flexWrap: "wrap", gap: 8, alignItems: "flex-end", marginBottom: 12 }}>
             <div style={{ flex: 1 }}>
               <Field label="وحدة جديدة"><input name="name_ar" className="input" required /></Field>
             </div>

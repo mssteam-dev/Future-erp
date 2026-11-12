@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
 export type NavItem = { href: string; label: string };
 export type NavGroup = { title: string; icon: string; items: NavItem[] };
@@ -14,47 +14,55 @@ export default function Sidebar({ groups, company }: { groups: NavGroup[]; compa
   const isActive = (href: string) =>
     href === "/" ? pathname === "/" : pathname === href || pathname.startsWith(href + "/");
 
+  // إغلاق الدرج عند تغيّر الصفحة، وبمفتاح Escape، ومنع تمرير الخلفية أثناء فتحه
+  useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    setOpen(false);
+  }, [pathname]);
+
+  useEffect(() => {
+    if (!open) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") setOpen(false);
+    };
+    document.addEventListener("keydown", onKey);
+    const prev = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    return () => {
+      document.removeEventListener("keydown", onKey);
+      document.body.style.overflow = prev;
+    };
+  }, [open]);
+
   return (
     <>
       <button
-        className="btn btn-ghost btn-sm no-print"
+        type="button"
+        className="sidebar-toggle no-print"
         onClick={() => setOpen((v) => !v)}
-        style={{
-          position: "fixed",
-          top: 12,
-          insetInlineEnd: 12,
-          zIndex: 60,
-          display: "none",
-        }}
-        data-mobile-toggle
+        aria-label={open ? "إغلاق القائمة" : "فتح القائمة"}
+        aria-expanded={open}
+        aria-controls="app-sidebar"
       >
-        ☰
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+          <path
+            d="M4 7h16M4 12h16M4 17h16"
+            stroke="currentColor"
+            strokeWidth="2"
+            strokeLinecap="round"
+          />
+        </svg>
       </button>
 
-      <aside
-        className="no-print"
-        style={{
-          width: 236,
-          flexShrink: 0,
-          background: "#fff",
-          borderInlineStart: "1px solid var(--border)",
-          height: "100vh",
-          position: "sticky",
-          top: 0,
-          overflowY: "auto",
-          display: open ? "block" : undefined,
-        }}
-      >
-        <div
-          style={{
-            padding: "16px 18px",
-            borderBottom: "1px solid var(--border)",
-            position: "sticky",
-            top: 0,
-            background: "#fff",
-            zIndex: 2,
-          }}
-        >
+      <div
+        className="sidebar-backdrop no-print"
+        data-open={open}
+        onClick={() => setOpen(false)}
+        aria-hidden="true"
+      />
+
+      <aside id="app-sidebar" className="sidebar no-print" data-open={open}>
+        <div className="sidebar-head">
           <div style={{ display: "flex", alignItems: "center", gap: 9 }}>
             <span
               style={{
@@ -75,43 +83,22 @@ export default function Sidebar({ groups, company }: { groups: NavGroup[]; compa
           </div>
         </div>
 
-        <nav style={{ padding: "10px 10px 28px" }}>
+        <nav style={{ padding: "10px 10px 28px" }} aria-label="القائمة الرئيسية">
           {groups.map((group) => (
             <div key={group.title} style={{ marginBottom: 14 }}>
-              <div
-                style={{
-                  fontSize: 11.5,
-                  fontWeight: 700,
-                  color: "var(--muted)",
-                  padding: "6px 10px",
-                  letterSpacing: ".2px",
-                }}
-              >
+              <div className="nav-group-title">
                 {group.icon} {group.title}
               </div>
-              {group.items.map((item) => {
-                const active = isActive(item.href);
-                return (
-                  <Link
-                    key={item.href}
-                    href={item.href}
-                    onClick={() => setOpen(false)}
-                    style={{
-                      display: "block",
-                      padding: "8px 12px",
-                      marginBottom: 2,
-                      borderRadius: 8,
-                      fontSize: 13.5,
-                      fontWeight: active ? 600 : 500,
-                      color: active ? "var(--brand)" : "var(--text)",
-                      background: active ? "var(--brand-light)" : "transparent",
-                      textDecoration: "none",
-                    }}
-                  >
-                    {item.label}
-                  </Link>
-                );
-              })}
+              {group.items.map((item) => (
+                <Link
+                  key={item.href}
+                  href={item.href}
+                  className="nav-link"
+                  aria-current={isActive(item.href) ? "page" : undefined}
+                >
+                  {item.label}
+                </Link>
+              ))}
             </div>
           ))}
         </nav>

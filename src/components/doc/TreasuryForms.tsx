@@ -184,7 +184,7 @@ export function CollectionForm({
           allocations={alloc.allocations}
           setAllocations={alloc.setAllocations}
         />
-        <div style={{ padding: 12, display: "flex", justifyContent: "space-between", alignItems: "center", gap: 12 }}>
+        <div style={{ padding: 12, display: "flex", flexWrap: "wrap", justifyContent: "space-between", alignItems: "center", gap: 12 }}>
           <div style={{ fontSize: 13.5 }}>
             الموزَّع: <strong className="num">{alloc.allocated.toFixed(3)}</strong> من{" "}
             <strong className="num">{amount.toFixed(3)}</strong>
@@ -290,7 +290,7 @@ export function SupplierPaymentForm({
           allocations={alloc.allocations}
           setAllocations={alloc.setAllocations}
         />
-        <div style={{ padding: 12, display: "flex", justifyContent: "space-between", alignItems: "center", gap: 12 }}>
+        <div style={{ padding: 12, display: "flex", flexWrap: "wrap", justifyContent: "space-between", alignItems: "center", gap: 12 }}>
           <div style={{ fontSize: 13.5 }}>
             الموزَّع: <strong className="num">{alloc.allocated.toFixed(3)}</strong> من{" "}
             <strong className="num">{amount.toFixed(3)}</strong>

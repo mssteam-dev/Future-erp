@@ -47,7 +47,7 @@ export default async function EditProductPage({
       <ProductForm categories={categories} uoms={uoms} initial={product} />
 
       {stock.length > 0 ? (
-        <div className="card" style={{ padding: 0, overflow: "hidden" }}>
+        <div className="card" style={{ padding: 0, overflowX: "auto" }}>
           <table className="table">
             <thead>
               <tr>

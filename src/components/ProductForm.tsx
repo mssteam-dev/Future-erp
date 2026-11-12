@@ -152,7 +152,7 @@ export default function ProductForm({
           </div>
 
           {/* ------------------------------ الحقول ------------------------------ */}
-          <div style={{ flex: 1, minWidth: 420 }}>
+          <div style={{ flex: "1 1 min(100%, 420px)", minWidth: 0 }}>
             <FormRow cols={2}>
               <Field label="الكود">
                 <input

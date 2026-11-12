@@ -92,7 +92,7 @@ export function SalesReturnForm({
 
       <Card>
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-end", gap: 16, flexWrap: "wrap" }}>
-          <div style={{ minWidth: 260 }}>
+          <div style={{ minWidth: "min(100%, 260px)" }}>
             <Totals
               rows={[
                 ["قيمة المرتجع", net],
@@ -101,7 +101,7 @@ export function SalesReturnForm({
               ]}
             />
           </div>
-          <div style={{ display: "flex", gap: 8 }}>
+          <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
             <button type="submit" name="intent" value="draft" className="btn btn-ghost" disabled={pending}>حفظ كمسودة</button>
             <button type="submit" name="intent" value="post" className="btn btn-primary" disabled={pending}>حفظ وترحيل</button>
           </div>
@@ -195,7 +195,7 @@ export function PurchaseReturnForm({
 
       <Card>
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-end", gap: 16, flexWrap: "wrap" }}>
-          <div style={{ minWidth: 260 }}>
+          <div style={{ minWidth: "min(100%, 260px)" }}>
             <Totals
               rows={[
                 ["قيمة المرتجع", net],
@@ -204,7 +204,7 @@ export function PurchaseReturnForm({
               ]}
             />
           </div>
-          <div style={{ display: "flex", gap: 8 }}>
+          <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
             <button type="submit" name="intent" value="draft" className="btn btn-ghost" disabled={pending}>حفظ كمسودة</button>
             <button type="submit" name="intent" value="post" className="btn btn-primary" disabled={pending}>حفظ وترحيل</button>
           </div>

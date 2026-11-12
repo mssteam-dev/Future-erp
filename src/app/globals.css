@@ -18,6 +18,13 @@
   --danger-bg: #fdecea;
   --warning: #9a6700;
   --warning-bg: #fff6e0;
+
+  --radius: 12px;
+  --radius-sm: 9px;
+  --shadow-sm: 0 1px 2px rgba(22, 32, 58, 0.05);
+  --shadow-md: 0 4px 14px rgba(22, 32, 58, 0.08);
+  --shadow-lg: 0 10px 40px rgba(22, 32, 58, 0.22);
+  --ring: 0 0 0 3px rgba(21, 57, 154, 0.16);
 }
 
 @theme inline {
@@ -35,10 +42,17 @@
   box-sizing: border-box;
 }
 
+html {
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
+  -webkit-tap-highlight-color: transparent;
+}
+
 html,
 body {
   padding: 0;
   margin: 0;
+  max-width: 100%;
 }
 
 body {
@@ -46,7 +60,31 @@ body {
   color: var(--text);
   font-family: var(--font-arabic);
   font-size: 14px;
+  line-height: 1.55;
   -webkit-font-smoothing: antialiased;
+  overflow-wrap: break-word;
+}
+
+img,
+svg,
+video {
+  max-width: 100%;
+}
+
+h1,
+h2,
+h3 {
+  line-height: 1.35;
+}
+
+/* لوحة المفاتيح: حلقة تركيز واضحة لكل العناصر التفاعلية */
+a:focus-visible,
+button:focus-visible,
+summary:focus-visible,
+[role="button"]:focus-visible {
+  outline: 2px solid var(--brand);
+  outline-offset: 2px;
+  border-radius: 6px;
 }
 
 /* الأرقام دائمًا بخط جدولي ومحاذاة لاتينية داخل النص العربي */
@@ -62,7 +100,30 @@ body {
 .card {
   background: var(--surface);
   border: 1px solid var(--border);
-  border-radius: 12px;
+  border-radius: var(--radius);
+  box-shadow: var(--shadow-sm);
+}
+
+.card-head {
+  padding: 12px 16px;
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 8px 12px;
+}
+
+.card-body {
+  padding: 16px;
+  /* الجداول العريضة تُمرَّر أفقيًا داخل البطاقة بدل أن تُقطع أو تكسر الصفحة */
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+.card-body-flush {
+  padding: 0;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
 }
 
 .btn {
@@ -72,13 +133,16 @@ body {
   gap: 6px;
   height: 38px;
   padding: 0 16px;
-  border-radius: 9px;
+  border-radius: var(--radius-sm);
   font-size: 14px;
   font-weight: 600;
+  font-family: inherit;
   border: 1px solid transparent;
   cursor: pointer;
-  transition: background 0.12s, border-color 0.12s, color 0.12s;
+  transition: background 0.14s, border-color 0.14s, color 0.14s, box-shadow 0.14s;
   white-space: nowrap;
+  text-decoration: none;
+  touch-action: manipulation;
 }
 .btn:disabled {
   opacity: 0.55;
@@ -87,6 +151,7 @@ body {
 .btn-primary {
   background: var(--brand);
   color: #fff;
+  box-shadow: 0 1px 2px rgba(15, 42, 115, 0.25);
 }
 .btn-primary:hover:not(:disabled) {
   background: var(--brand-dark);
@@ -119,15 +184,22 @@ body {
 .select,
 .textarea {
   width: 100%;
+  min-width: 0;
   height: 38px;
   padding: 0 11px;
   border: 1px solid var(--border);
-  border-radius: 9px;
+  border-radius: var(--radius-sm);
   background: #fff;
   color: var(--text);
   font-size: 14px;
   font-family: inherit;
   outline: none;
+  transition: border-color 0.14s, box-shadow 0.14s;
+}
+.input:hover:not(:disabled):not(:focus),
+.select:hover:not(:disabled):not(:focus),
+.textarea:hover:not(:focus) {
+  border-color: #c9d1e6;
 }
 .textarea {
   height: auto;
@@ -139,12 +211,19 @@ body {
 .select:focus,
 .textarea:focus {
   border-color: var(--brand);
-  box-shadow: 0 0 0 3px rgba(21, 57, 154, 0.11);
+  box-shadow: var(--ring);
 }
 .input:disabled,
 .select:disabled {
   background: #f6f7fb;
   color: var(--muted);
+}
+/* حقول التاريخ في iOS تأخذ عرضًا ذاتيًا — نثبّتها على عرض الحاوية */
+.input[type="date"],
+.input[type="month"] {
+  display: block;
+  -webkit-appearance: none;
+  appearance: none;
 }
 .input-num {
   font-variant-numeric: tabular-nums;
@@ -198,6 +277,14 @@ body {
   font-variant-numeric: tabular-nums;
   direction: ltr;
 }
+.table a {
+  color: var(--brand);
+  text-decoration: none;
+  font-weight: 600;
+}
+.table a:hover {
+  text-decoration: underline;
+}
 
 .badge {
   display: inline-flex;
@@ -243,6 +330,510 @@ body {
   border: 1px solid #f0dca8;
 }
 
+/* ---------------------------- رأس الصفحة والتخطيط ------------------------- */
+.page-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px 16px;
+  margin-bottom: 18px;
+  flex-wrap: wrap;
+}
+.page-title {
+  font-size: 20px;
+  font-weight: 700;
+  margin: 0;
+}
+.page-subtitle {
+  color: var(--muted);
+  font-size: 13px;
+  margin: 5px 0 0;
+}
+.page-actions {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+/* بطاقات التقارير والمستندات: الجداول العريضة تُمرَّر أفقيًا داخلها */
+.card.print-full {
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+/* شبكة بطاقات الإحصاءات */
+.stat-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, var(--min, 240px)), 1fr));
+  gap: 12px;
+  margin-bottom: 16px;
+}
+.stat-card {
+  padding: 13px 15px;
+  min-width: 0;
+}
+.stat-value {
+  font-size: 19px;
+  font-weight: 700;
+  overflow-wrap: anywhere;
+}
+
+/* صفوف النماذج: تتقلص تلقائيًا على الشاشات الصغيرة */
+.form-row {
+  display: grid;
+  grid-template-columns: repeat(var(--cols, 3), minmax(0, 1fr));
+  gap: 12px;
+  margin-bottom: 12px;
+}
+
+/* عمود رئيسي + عمود جانبي (مثل الدفع والإجماليات) */
+.split {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 340px;
+  gap: 16px;
+  align-items: start;
+}
+
+/* شبكة بطاقات تتكيف مع العرض بلا تجاوز */
+.grid-cards {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, var(--min, 340px)), 1fr));
+  gap: 16px;
+}
+
+/* شريط الفلاتر */
+.filters {
+  padding: 12px;
+  margin-bottom: 16px;
+  display: flex;
+  gap: 12px;
+  align-items: flex-end;
+  flex-wrap: wrap;
+}
+.filters .filter-field {
+  width: 190px;
+  max-width: 100%;
+  min-width: 0;
+}
+.filters .filter-field.is-date {
+  width: 160px;
+}
+
+/* ------------------------------ هيكل التطبيق ------------------------------ */
+.app-shell {
+  display: flex;
+  min-height: 100vh;
+  min-height: 100dvh;
+}
+.app-body {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+}
+.app-topbar {
+  height: 56px;
+  background: rgba(255, 255, 255, 0.92);
+  -webkit-backdrop-filter: saturate(1.4) blur(8px);
+  backdrop-filter: saturate(1.4) blur(8px);
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 0 24px;
+  position: sticky;
+  top: 0;
+  z-index: 30;
+}
+.app-main {
+  flex: 1;
+  padding: 24px 28px 56px;
+  max-width: 1480px;
+  width: 100%;
+}
+.topbar-company {
+  display: none;
+  font-weight: 700;
+  font-size: 14px;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.topbar-user {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-width: 0;
+}
+.topbar-user-name {
+  font-size: 13px;
+  font-weight: 600;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  max-width: 180px;
+}
+
+.sidebar {
+  width: 248px;
+  flex-shrink: 0;
+  background: #fff;
+  border-inline-start: 1px solid var(--border);
+  height: 100vh;
+  height: 100dvh;
+  position: sticky;
+  top: 0;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+.sidebar-head {
+  padding: 16px 18px;
+  border-bottom: 1px solid var(--border);
+  position: sticky;
+  top: 0;
+  background: #fff;
+  z-index: 2;
+}
+.nav-group-title {
+  font-size: 11.5px;
+  font-weight: 700;
+  color: var(--muted);
+  padding: 6px 10px;
+  letter-spacing: 0.2px;
+}
+.nav-link {
+  display: block;
+  padding: 8px 12px;
+  margin-bottom: 2px;
+  border-radius: 8px;
+  font-size: 13.5px;
+  font-weight: 500;
+  color: var(--text);
+  background: transparent;
+  text-decoration: none;
+  transition: background 0.12s, color 0.12s;
+}
+.nav-link:hover {
+  background: #f3f5fb;
+}
+.nav-link[aria-current="page"] {
+  font-weight: 600;
+  color: var(--brand);
+  background: var(--brand-light);
+}
+
+.sidebar-toggle,
+.sidebar-backdrop {
+  display: none;
+}
+
+/* --------------------- جدول الأصناف: بطاقات على الجوال -------------------- */
+.line-table td .input {
+  min-width: 80px;
+}
+
+/* ------------------------------- الدخول ---------------------------------- */
+.login-screen {
+  min-height: 100vh;
+  min-height: 100dvh;
+  display: grid;
+  place-items: center;
+  background: linear-gradient(160deg, #15399a 0%, #0f2a73 55%, #0b1f55 100%);
+  padding: 20px;
+}
+
+/* ============================== التجاوب ================================== */
+
+/* لابتوب صغير وتابلت أفقي: نضيّق الهوامش */
+@media (max-width: 1279px) {
+  .app-main {
+    padding: 20px 20px 48px;
+  }
+  .app-topbar {
+    padding: 0 20px;
+  }
+}
+
+/* تابلت وجوال: القائمة الجانبية تصبح درجًا يُفتح بزر */
+@media (max-width: 1023px) {
+  .sidebar {
+    position: fixed;
+    top: 0;
+    bottom: 0;
+    inset-inline-start: 0;
+    height: auto;
+    width: min(300px, 86vw);
+    z-index: 80;
+    border-inline-start: 0;
+    box-shadow: var(--shadow-lg);
+    transform: translateX(100%);
+    visibility: hidden;
+    transition: transform 0.24s ease, visibility 0.24s;
+  }
+  .sidebar[data-open="true"] {
+    transform: none;
+    visibility: visible;
+  }
+  .sidebar-backdrop {
+    display: block;
+    position: fixed;
+    inset: 0;
+    z-index: 70;
+    background: rgba(15, 23, 42, 0.45);
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.2s;
+  }
+  .sidebar-backdrop[data-open="true"] {
+    opacity: 1;
+    pointer-events: auto;
+  }
+  .sidebar-toggle {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    position: fixed;
+    top: 8px;
+    inset-inline-start: 12px;
+    z-index: 60;
+    width: 40px;
+    height: 40px;
+    padding: 0;
+    border-radius: 10px;
+    background: #fff;
+    border: 1px solid var(--border);
+    color: var(--text);
+    cursor: pointer;
+    box-shadow: var(--shadow-sm);
+  }
+  .app-topbar {
+    padding-inline-start: 64px;
+    padding-inline-end: 14px;
+  }
+  .topbar-company {
+    display: block;
+  }
+  .topbar-currency {
+    display: none;
+  }
+}
+
+/* تابلت عمودي: النماذج والأعمدة الجانبية */
+@media (max-width: 900px) {
+  .split {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .form-row:not([data-cols="1"]):not([data-cols="2"]) {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+/* جوال */
+@media (max-width: 640px) {
+  body {
+    font-size: 14.5px;
+  }
+  .app-main {
+    padding: 14px 12px 40px;
+  }
+  .app-topbar {
+    padding-inline-end: 12px;
+  }
+  .topbar-user-role {
+    display: none;
+  }
+  .topbar-user-name {
+    max-width: 110px;
+  }
+
+  .page-header {
+    margin-bottom: 14px;
+  }
+  .page-title {
+    font-size: 18px;
+  }
+  .page-actions {
+    width: 100%;
+  }
+  .page-actions .btn {
+    flex: 1 1 auto;
+  }
+
+  .card-head {
+    padding: 11px 14px;
+  }
+  .card-body {
+    padding: 14px;
+  }
+
+  /* حجم 16px يمنع تكبير iOS التلقائي عند التركيز على الحقول */
+  .input,
+  .select,
+  .textarea {
+    height: 44px;
+    font-size: 16px;
+  }
+  .textarea {
+    height: auto;
+  }
+  .btn {
+    height: 44px;
+  }
+  .btn-sm {
+    height: 40px;
+    padding: 0 13px;
+  }
+  .label {
+    font-size: 13px;
+  }
+
+  .stat-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 10px;
+  }
+  .stat-card {
+    padding: 11px 12px;
+  }
+  .stat-value {
+    font-size: 16.5px;
+  }
+
+  .form-row {
+    grid-template-columns: minmax(0, 1fr) !important;
+    gap: 10px;
+  }
+
+  .filters {
+    padding: 12px;
+    gap: 10px;
+  }
+  .filters .filter-field {
+    width: 100%;
+    min-width: 0;
+    flex: 1 1 100%;
+  }
+  /* حقلا التاريخ جنبًا إلى جنب على الجوال العادي */
+  .filters .filter-field.is-date {
+    width: auto;
+    flex: 1 1 calc(50% - 6px);
+  }
+  .filters .btn {
+    flex: 1 1 calc(50% - 6px);
+  }
+
+  .table {
+    font-size: 13px;
+  }
+  .table thead th,
+  .table tbody td,
+  .table tfoot td {
+    padding-inline: 10px;
+  }
+
+  /* بطاقات التقارير والمستندات */
+  .card.print-full {
+    padding: 14px !important;
+  }
+
+  /* جدول الأصناف يتحول إلى بطاقة لكل سطر */
+  .line-table,
+  .line-table tbody {
+    display: block;
+    width: 100%;
+  }
+  .line-table thead {
+    display: none;
+  }
+  .line-table tbody tr {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 10px 12px;
+    padding: 14px;
+    border-bottom: 1px solid var(--border);
+    position: relative;
+  }
+  .line-table tbody tr:last-child {
+    border-bottom: 0;
+  }
+  .line-table tbody td {
+    display: block;
+    padding: 0;
+    border: 0;
+    min-width: 0;
+  }
+  .line-table td[data-label]::before {
+    content: attr(data-label);
+    display: block;
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--muted);
+    margin-bottom: 4px;
+  }
+  .line-table td.col-product {
+    grid-column: 1 / -1;
+    padding-inline-end: 48px;
+  }
+  .line-table td.col-index {
+    display: none;
+  }
+  .line-table td.col-total {
+    text-align: right;
+    font-size: 15px;
+  }
+  .line-table td.col-delete {
+    position: absolute;
+    top: 10px;
+    inset-inline-end: 10px;
+  }
+  .line-table td.col-empty {
+    grid-column: 1 / -1;
+  }
+  .line-table td .input {
+    min-width: 0;
+  }
+  .line-table td.col-delete .btn {
+    width: 40px;
+    padding: 0;
+  }
+}
+
+/* شاشات صغيرة جدًا (320px) */
+@media (max-width: 380px) {
+  .filters .filter-field.is-date {
+    flex-basis: 100%;
+  }
+  .stat-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .topbar-user-name {
+    max-width: 84px;
+  }
+}
+
+/* شاشات اللمس: أهداف لمس مريحة */
+@media (pointer: coarse) {
+  .nav-link {
+    padding: 11px 12px;
+  }
+}
+
+/* احترام تفضيل تقليل الحركة */
+@media (prefers-reduced-motion: reduce) {
+  * {
+    transition: none !important;
+    animation: none !important;
+  }
+}
+
+/* شاشات كبيرة جدًا */
+@media (min-width: 1700px) {
+  .app-main {
+    max-width: 1600px;
+  }
+}
+
 /* ------------------------------- الطباعة ---------------------------------- */
 @media print {
   .no-print {
@@ -255,11 +846,21 @@ body {
   .card {
     border: none;
     border-radius: 0;
+    box-shadow: none;
+  }
+  .card-body,
+  .card-body-flush,
+  .card.print-full {
+    overflow: visible !important;
   }
   .print-full {
     margin: 0 !important;
     padding: 0 !important;
     max-width: none !important;
+  }
+  .app-main {
+    padding: 0;
+    max-width: none;
   }
   @page {
     margin: 12mm;

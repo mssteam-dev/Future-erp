@@ -127,7 +127,7 @@ export default async function PurchaseInvoicePage({
         </table>
 
         <div style={{ display: "flex", justifyContent: "space-between", gap: 24, marginTop: 18, flexWrap: "wrap" }}>
-          <div style={{ minWidth: 240, flex: 1 }}>
+          <div style={{ minWidth: "min(100%, 240px)", flex: 1 }}>
             {payments.length > 0 ? (
               <table className="table" style={{ fontSize: 13 }}>
                 <tbody>
@@ -149,7 +149,7 @@ export default async function PurchaseInvoicePage({
             ) : null}
           </div>
 
-          <table style={{ minWidth: 280, fontSize: 13.5 }}>
+          <table style={{ minWidth: "min(100%, 280px)", fontSize: 13.5 }}>
             <tbody>
               <tr>
                 <td style={{ padding: "5px 0", color: "var(--muted)" }}>الإجمالي</td>

@@ -154,7 +154,7 @@ export default async function SalesInvoicePage({
             flexWrap: "wrap",
           }}
         >
-          <div style={{ minWidth: 240, flex: 1 }}>
+          <div style={{ minWidth: "min(100%, 240px)", flex: 1 }}>
             {payments.length > 0 ? (
               <>
                 <div style={{ fontSize: 13, fontWeight: 700, marginBottom: 6 }}>المقبوضات</div>
@@ -182,7 +182,7 @@ export default async function SalesInvoicePage({
             </div>
           </div>
 
-          <table style={{ minWidth: 280, fontSize: 13.5 }}>
+          <table style={{ minWidth: "min(100%, 280px)", fontSize: 13.5 }}>
             <tbody>
               <tr>
                 <td style={{ padding: "5px 0", color: "var(--muted)" }}>الإجمالي قبل الخصم</td>

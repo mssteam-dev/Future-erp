@@ -19,9 +19,10 @@ export default function PrintHeader({
     <div
       style={{
         display: "flex",
+        flexWrap: "wrap",
         justifyContent: "space-between",
         alignItems: "flex-start",
-        gap: 20,
+        gap: "10px 20px",
         paddingBottom: 14,
         marginBottom: 16,
         borderBottom: "2px solid var(--brand)",

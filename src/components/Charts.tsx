@@ -33,7 +33,7 @@ export function BarChart({
         viewBox={`0 0 ${width} ${height}`}
         width="100%"
         height={height}
-        style={{ maxWidth: width, display: "block", margin: "0 auto" }}
+        style={{ maxWidth: width, minWidth: Math.min(width, 440), display: "block", margin: "0 auto" }}
         role="img"
       >
         {[0, 0.25, 0.5, 0.75, 1].map((t) => (
@@ -118,7 +118,13 @@ export function LineChart({
 
   return (
     <div style={{ overflowX: "auto", padding: "8px 4px 0" }}>
-      <svg viewBox={`0 0 ${width} ${height}`} width="100%" height={height} role="img">
+      <svg
+        viewBox={`0 0 ${width} ${height}`}
+        width="100%"
+        height={height}
+        style={{ minWidth: 520, display: "block" }}
+        role="img"
+      >
         {[0, 0.5, 1].map((t) => (
           <line key={t} x1={0} x2={width} y1={8 + plot * t} y2={8 + plot * t} stroke="#eef1f7" />
         ))}

@@ -125,33 +125,20 @@ export default async function AppLayout({ children }: { children: React.ReactNod
     .map(({ title, icon, items }) => ({ title, icon, items }));
 
   return (
-    <div style={{ display: "flex", minHeight: "100vh" }}>
+    <div className="app-shell">
       <Sidebar groups={groups} company={settings.company_name_ar} />
 
-      <div style={{ flex: 1, minWidth: 0, display: "flex", flexDirection: "column" }}>
-        <header
-          className="no-print"
-          style={{
-            height: 56,
-            background: "#fff",
-            borderBottom: "1px solid var(--border)",
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "space-between",
-            padding: "0 20px",
-            position: "sticky",
-            top: 0,
-            zIndex: 30,
-          }}
-        >
-          <div style={{ fontSize: 13, color: "var(--muted)" }}>
+      <div className="app-body">
+        <header className="app-topbar no-print">
+          <div className="topbar-company">{settings.company_name_ar}</div>
+          <div className="topbar-currency" style={{ fontSize: 13, color: "var(--muted)" }}>
             العملة: <strong style={{ color: "var(--text)" }}>{settings.currency_code}</strong>
           </div>
 
-          <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-            <div style={{ textAlign: "left" }}>
-              <div style={{ fontSize: 13, fontWeight: 600 }}>{user.fullName}</div>
-              <div style={{ fontSize: 11.5, color: "var(--muted)" }}>
+          <div className="topbar-user">
+            <div style={{ textAlign: "left", minWidth: 0 }}>
+              <div className="topbar-user-name">{user.fullName}</div>
+              <div className="topbar-user-role" style={{ fontSize: 11.5, color: "var(--muted)" }}>
                 {user.isOwner ? "مالك النظام" : "مستخدم"}
               </div>
             </div>
@@ -163,9 +150,7 @@ export default async function AppLayout({ children }: { children: React.ReactNod
           </div>
         </header>
 
-        <main style={{ flex: 1, padding: "22px 24px 48px", maxWidth: 1480, width: "100%" }}>
-          {children}
-        </main>
+        <main className="app-main">{children}</main>
       </div>
     </div>
   );

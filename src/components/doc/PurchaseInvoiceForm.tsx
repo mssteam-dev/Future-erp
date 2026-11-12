@@ -181,7 +181,7 @@ export default function PurchaseInvoiceForm({
         />
       </Card>
 
-      <div style={{ display: "grid", gridTemplateColumns: "1fr 340px", gap: 16 }}>
+      <div className="split">
         <Card title="الدفع للمورد">
           <FormRow cols={2}>
             <Field label="المبلغ نقدًا">
@@ -227,7 +227,7 @@ export default function PurchaseInvoiceForm({
               </select>
             </Field>
           </FormRow>
-          <div style={{ display: "flex", gap: 8 }}>
+          <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
             <button
               type="button"
               className="btn btn-ghost btn-sm"
@@ -264,7 +264,7 @@ export default function PurchaseInvoiceForm({
               ["المتبقي للمورد", remaining],
             ]}
           />
-          <div style={{ display: "flex", gap: 8, marginTop: 14 }}>
+          <div style={{ display: "flex", flexWrap: "wrap", gap: 8, marginTop: 14 }}>
             <button type="submit" name="intent" value="draft" className="btn btn-ghost" disabled={pending} style={{ flex: 1 }}>
               حفظ كمسودة
             </button>

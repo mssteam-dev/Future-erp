@@ -182,7 +182,7 @@ export default function SalesInvoiceForm({
         />
       </Card>
 
-      <div style={{ display: "grid", gridTemplateColumns: "1fr 340px", gap: 16 }}>
+      <div className="split">
         <Card title="طريقة الدفع">
           <FormRow cols={2}>
             <Field label="المبلغ نقدًا">
@@ -285,7 +285,7 @@ export default function SalesInvoiceForm({
               ["المتبقي (ذمة)", remaining],
             ]}
           />
-          <div style={{ display: "flex", gap: 8, marginTop: 14 }}>
+          <div style={{ display: "flex", flexWrap: "wrap", gap: 8, marginTop: 14 }}>
             <button
               type="submit"
               name="intent"

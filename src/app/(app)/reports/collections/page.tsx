@@ -85,7 +85,7 @@ export default async function CollectionsReportPage({
         )}
       </div>
 
-      <div className="card" style={{ padding: 20 }}>
+      <div className="card print-full" style={{ padding: 20 }}>
         <h2 style={{ fontSize: 15, fontWeight: 700, marginTop: 0 }}>أرصدة الذمم المدينة</h2>
         {aging.length === 0 ? (
           <Empty message="لا توجد ذمم" />

@@ -81,7 +81,7 @@ export function TransferForm({
               {totalCost.toLocaleString("en-US", { minimumFractionDigits: 3, maximumFractionDigits: 3 })}
             </strong>
           </div>
-          <div style={{ display: "flex", gap: 8 }}>
+          <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
             <button type="submit" name="intent" value="draft" className="btn btn-ghost" disabled={pending}>
               حفظ كمسودة
             </button>
@@ -172,7 +172,7 @@ export function AdjustmentForm({
               {diffValue.toLocaleString("en-US", { minimumFractionDigits: 3, maximumFractionDigits: 3 })}
             </strong>
           </div>
-          <div style={{ display: "flex", gap: 8 }}>
+          <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
             <button type="submit" name="intent" value="draft" className="btn btn-ghost" disabled={pending}>
               حفظ كمسودة
             </button>

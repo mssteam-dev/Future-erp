@@ -141,7 +141,7 @@ export default async function DashboardPage({
         />
       </Grid>
 
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(380px,1fr))", gap: 16 }}>
+      <div className="grid-cards" style={{ "--min": "380px" } as React.CSSProperties}>
         <Card title="صافي مبيعات الفروع">
           <BarChart
             data={branchRows.map((r) => ({ label: r.branch_name, value: Number(r.net_sales) }))}
@@ -247,7 +247,7 @@ export default async function DashboardPage({
         </div>
       </Card>
 
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(380px,1fr))", gap: 16 }}>
+      <div className="grid-cards" style={{ "--min": "380px" } as React.CSSProperties}>
         <Card title="أعلى 5 منتجات مبيعًا" padded={false}>
           {topSales.length === 0 ? (
             <Empty message="لا توجد مبيعات في الفترة" />

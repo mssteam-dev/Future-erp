@@ -41,35 +41,25 @@ export default function Filters({
 
   return (
     <div
-      className="card no-print"
-      style={{
-        padding: 12,
-        marginBottom: 16,
-        display: "flex",
-        gap: 12,
-        alignItems: "flex-end",
-        flexWrap: "wrap",
-        opacity: pending ? 0.6 : 1,
-      }}
+      className="card filters no-print"
+      style={{ opacity: pending ? 0.6 : 1 }}
     >
       {showPeriod ? (
         <>
-          <div>
+          <div className="filter-field is-date">
             <label className="label">من تاريخ</label>
             <input
               type="date"
               className="input input-num"
-              style={{ width: 160 }}
               defaultValue={params.get("from") ?? defFrom}
               onChange={(e) => set("from", e.target.value)}
             />
           </div>
-          <div>
+          <div className="filter-field is-date">
             <label className="label">إلى تاريخ</label>
             <input
               type="date"
               className="input input-num"
-              style={{ width: 160 }}
               defaultValue={params.get("to") ?? defTo}
               onChange={(e) => set("to", e.target.value)}
             />
@@ -78,11 +68,10 @@ export default function Filters({
       ) : null}
 
       {showBranch ? (
-        <div>
+        <div className="filter-field">
           <label className="label">الوحدة</label>
           <select
             className="select"
-            style={{ width: 190 }}
             defaultValue={params.get("branch") ?? ""}
             onChange={(e) => set("branch", e.target.value)}
           >
@@ -97,11 +86,10 @@ export default function Filters({
       ) : null}
 
       {extra?.map((field) => (
-        <div key={field.name}>
+        <div key={field.name} className="filter-field">
           <label className="label">{field.label}</label>
           <select
             className="select"
-            style={{ width: 190 }}
             defaultValue={params.get(field.name) ?? ""}
             onChange={(e) => set(field.name, e.target.value)}
           >
@@ -121,7 +109,6 @@ export default function Filters({
       {exportReport ? (
         <a
           className="btn btn-ghost btn-sm"
-          style={{ textDecoration: "none" }}
           href={`/api/export?report=${exportReport}&${params.toString()}`}
         >
           تصدير CSV

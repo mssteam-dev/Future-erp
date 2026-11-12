@@ -109,7 +109,7 @@ export default async function CategoriesPage({
             </label>
           ) : null}
 
-          <div style={{ display: "flex", gap: 8 }}>
+          <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
             <button className="btn btn-primary">{editing ? "حفظ التعديلات" : "إضافة"}</button>
             {editing ? (
               <Link href="/products/categories" className="btn btn-ghost">

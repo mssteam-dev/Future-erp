@@ -27,15 +27,7 @@ export default async function LoginPage({
   });
 
   return (
-    <div
-      style={{
-        minHeight: "100vh",
-        display: "grid",
-        placeItems: "center",
-        background: "linear-gradient(160deg,#15399a 0%,#0f2a73 55%,#0b1f55 100%)",
-        padding: 20,
-      }}
-    >
+    <div className="login-screen">
       <div style={{ width: "100%", maxWidth: 380 }}>
         <div style={{ textAlign: "center", marginBottom: 22 }}>
           <div
@@ -60,7 +52,7 @@ export default async function LoginPage({
           </p>
         </div>
 
-        <form action={signIn} className="card" style={{ padding: 22 }}>
+        <form action={signIn} className="card" style={{ padding: 22, boxShadow: "var(--shadow-lg)" }}>
           {error ? (
             <div className="alert alert-error" style={{ marginBottom: 16 }}>
               {error}
@@ -71,14 +63,14 @@ export default async function LoginPage({
             <label className="label" htmlFor="identifier">
               اسم المستخدم أو البريد
             </label>
-            <input id="identifier" name="identifier" className="input" required autoFocus />
+            <input id="identifier" name="identifier" className="input" required autoFocus autoComplete="username" />
           </div>
 
           <div style={{ marginBottom: 20 }}>
             <label className="label" htmlFor="password">
               كلمة المرور
             </label>
-            <input id="password" name="password" type="password" className="input" required />
+            <input id="password" name="password" type="password" className="input" required autoComplete="current-password" />
           </div>
 
           <button type="submit" className="btn btn-primary" style={{ width: "100%" }}>

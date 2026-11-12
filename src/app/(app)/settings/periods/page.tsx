@@ -88,7 +88,7 @@ export default async function PeriodsPage({
         <div className="alert alert-warning" style={{ fontSize: 13.5, marginBottom: 12 }}>
           إقفال السنة يرحّل أرصدة الإيرادات والمصاريف إلى الأرباح المدورة. نفّذه بعد إقفال كل أشهر السنة.
         </div>
-        <form action={closeFiscalYear} style={{ display: "flex", gap: 10, alignItems: "flex-end" }}>
+        <form action={closeFiscalYear} style={{ display: "flex", flexWrap: "wrap", gap: 10, alignItems: "flex-end" }}>
           <div>
             <label className="label">السنة</label>
             <select name="year" className="select" style={{ width: 150 }}>

@@ -100,7 +100,7 @@ export default function LineTable({
 
   return (
     <div style={{ overflowX: "auto" }}>
-      <table className="table">
+      <table className="table line-table">
         <thead>
           <tr>
             <th style={{ width: 34 }}>#</th>
@@ -142,10 +142,10 @@ export default function LineTable({
             const short = mode === "sale" && available !== undefined && l.quantity > available;
             return (
               <tr key={l.key}>
-                <td className="num" style={{ color: "var(--muted)" }}>
+                <td className="num col-index" style={{ color: "var(--muted)" }}>
                   {i + 1}
                 </td>
-                <td>
+                <td className="col-product" data-label="المنتج">
                   <ProductPicker
                     products={products}
                     value={l.product_id}
@@ -167,11 +167,14 @@ export default function LineTable({
                   ) : null}
                 </td>
                 {mode === "count" ? (
-                  <td className="cell-num num">{l.system_qty ?? 0}</td>
+                  <td className="cell-num num" data-label="الرصيد الدفتري">
+                    {l.system_qty ?? 0}
+                  </td>
                 ) : null}
-                <td>
+                <td data-label={mode === "count" ? "الجرد الفعلي" : "الكمية"}>
                   <input
                     type="number"
+                    inputMode="decimal"
                     step="0.0001"
                     min="0"
                     className="input input-num"
@@ -188,9 +191,10 @@ export default function LineTable({
                   />
                 </td>
                 {showRate ? (
-                  <td>
+                  <td data-label={mode === "sale" ? "سعر البيع" : "تكلفة الوحدة"}>
                     <input
                       type="number"
+                      inputMode="decimal"
                       step="0.000001"
                       min="0"
                       className="input input-num"
@@ -201,9 +205,10 @@ export default function LineTable({
                   </td>
                 ) : null}
                 {showDiscount ? (
-                  <td>
+                  <td data-label="الخصم">
                     <input
                       type="number"
+                      inputMode="decimal"
                       step="0.0001"
                       min="0"
                       className="input input-num"
@@ -213,9 +218,10 @@ export default function LineTable({
                   </td>
                 ) : null}
                 {showTax ? (
-                  <td>
+                  <td data-label="الضريبة %">
                     <input
                       type="number"
+                      inputMode="decimal"
                       step="0.01"
                       min="0"
                       className="input input-num"
@@ -224,17 +230,22 @@ export default function LineTable({
                     />
                   </td>
                 ) : null}
-                <td className="cell-num num" style={{ fontWeight: 600 }}>
+                <td
+                  className="cell-num num col-total"
+                  data-label={mode === "count" ? "الفرق" : "الإجمالي"}
+                  style={{ fontWeight: 600 }}
+                >
                   {mode === "count"
                     ? round((l.counted ?? 0) - (l.system_qty ?? 0), 4)
                     : lineTotal(l).toLocaleString("en-US", { maximumFractionDigits: 4 })}
                 </td>
-                <td>
+                <td className="col-delete">
                   <button
                     type="button"
                     className="btn btn-danger btn-sm"
                     onClick={() => setLines(lines.filter((x) => x.key !== l.key))}
                     title="حذف السطر"
+                    aria-label="حذف السطر"
                   >
                     ✕
                   </button>
@@ -244,7 +255,7 @@ export default function LineTable({
           })}
           {lines.length === 0 ? (
             <tr>
-              <td colSpan={9} style={{ textAlign: "center", color: "var(--muted)", padding: 24 }}>
+              <td className="col-empty" colSpan={9} style={{ textAlign: "center", color: "var(--muted)", padding: 24 }}>
                 أضف أصنافًا إلى المستند
               </td>
             </tr>

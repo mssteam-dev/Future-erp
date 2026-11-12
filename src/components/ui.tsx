@@ -11,23 +11,12 @@ export function PageHeader({
   action?: React.ReactNode;
 }) {
   return (
-    <div
-      style={{
-        display: "flex",
-        alignItems: "flex-start",
-        justifyContent: "space-between",
-        gap: 16,
-        marginBottom: 18,
-        flexWrap: "wrap",
-      }}
-    >
-      <div>
-        <h1 style={{ fontSize: 20, fontWeight: 700, margin: 0 }}>{title}</h1>
-        {subtitle ? (
-          <p style={{ color: "var(--muted)", fontSize: 13, margin: "5px 0 0" }}>{subtitle}</p>
-        ) : null}
+    <div className="page-header">
+      <div style={{ minWidth: 0 }}>
+        <h1 className="page-title">{title}</h1>
+        {subtitle ? <p className="page-subtitle">{subtitle}</p> : null}
       </div>
-      {action ? <div className="no-print" style={{ display: "flex", gap: 8 }}>{action}</div> : null}
+      {action ? <div className="page-actions no-print">{action}</div> : null}
     </div>
   );
 }
@@ -46,21 +35,12 @@ export function Card({
   return (
     <section className="card" style={{ marginBottom: 16, overflow: "hidden" }}>
       {title ? (
-        <header
-          style={{
-            padding: "12px 16px",
-            borderBottom: "1px solid var(--border)",
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "space-between",
-            gap: 12,
-          }}
-        >
+        <header className="card-head">
           <h2 style={{ fontSize: 14.5, fontWeight: 700, margin: 0 }}>{title}</h2>
           {action}
         </header>
       ) : null}
-      <div style={padded ? { padding: 16 } : undefined}>{children}</div>
+      <div className={padded ? "card-body" : "card-body-flush"}>{children}</div>
     </section>
   );
 }
@@ -89,9 +69,9 @@ export function Stat({
           ? "var(--brand)"
           : "var(--text)";
   return (
-    <div className="card" style={{ padding: "13px 15px" }}>
+    <div className="card stat-card">
       <div style={{ fontSize: 12.5, color: "var(--muted)", marginBottom: 6 }}>{label}</div>
-      <div className="num" style={{ fontSize: 19, fontWeight: 700, color }}>
+      <div className="num stat-value" style={{ color }}>
         {value}
       </div>
       {hint ? (
@@ -134,7 +114,6 @@ export function LinkButton({
     <Link
       href={href}
       className={`btn btn-${variant}${small ? " btn-sm" : ""}`}
-      style={{ textDecoration: "none" }}
     >
       {children}
     </Link>
@@ -144,12 +123,8 @@ export function LinkButton({
 export function Grid({ cols, children }: { cols: number; children: React.ReactNode }) {
   return (
     <div
-      style={{
-        display: "grid",
-        gridTemplateColumns: `repeat(auto-fit, minmax(${Math.floor(1100 / cols)}px, 1fr))`,
-        gap: 12,
-        marginBottom: 16,
-      }}
+      className="stat-grid"
+      style={{ "--min": `${cols >= 4 ? 220 : 260}px` } as React.CSSProperties}
     >
       {children}
     </div>
@@ -159,12 +134,9 @@ export function Grid({ cols, children }: { cols: number; children: React.ReactNo
 export function FormRow({ children, cols = 3 }: { children: React.ReactNode; cols?: number }) {
   return (
     <div
-      style={{
-        display: "grid",
-        gridTemplateColumns: `repeat(${cols}, minmax(0,1fr))`,
-        gap: 12,
-        marginBottom: 12,
-      }}
+      className="form-row"
+      data-cols={cols}
+      style={{ "--cols": cols } as React.CSSProperties}
     >
       {children}
     </div>
