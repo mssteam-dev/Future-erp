@@ -1,9 +1,8 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
-  /* config options here */
-  cacheComponents: true,
-  partialPrefetching: true,
+  // كل الصفحات تقرأ بيانات حية من قاعدة البيانات
+  cacheComponents: false,
   turbopack: {
     rules: {
       "*.css": {
