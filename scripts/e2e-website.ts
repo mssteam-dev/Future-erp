@@ -166,7 +166,8 @@ async function main() {
 
   let pub = await publicContent();
   check("الموقع العام: بلا تسجيل دخول", pub.status === 200);
-  check("الموقع العام: تخزين مؤقت قصير", pub.cache.includes("s-maxage=30"));
+  check("الموقع العام: تخزين مؤقت قصير بلا نسخة قديمة",
+    pub.cache.includes("s-maxage=15") && !pub.cache.includes("stale-while-revalidate"));
   check("الموقع العام: الصنف الجديد بسعره وملاحظته",
     publicItem(pub.body)?.price === 2.5 && publicItem(pub.body)?.note_en === "Test note");
 
