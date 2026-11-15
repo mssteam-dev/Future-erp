@@ -1,4 +1,5 @@
-import { queryAs } from "@/lib/auth";
+import { redirect } from "next/navigation";
+import { can, queryAs, requireUser } from "@/lib/auth";
 import { getBranches, periodFrom } from "@/lib/data";
 import { money, pct, qty } from "@/lib/format";
 import Filters from "@/components/Filters";
@@ -30,6 +31,10 @@ export default async function DashboardPage({
 }: {
   searchParams: Promise<Record<string, string | undefined>>;
 }) {
+  // من لا يملك من النظام إلا قسم الموقع يبدأ منه مباشرة
+  const user = await requireUser();
+  if (!can(user, "dashboard.view") && can(user, "website.view")) redirect("/website/menu");
+
   const sp = await searchParams;
   const { from, to, branch } = periodFrom(sp);
   const branches = await getBranches();

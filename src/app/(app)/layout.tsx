@@ -90,6 +90,15 @@ export default async function AppLayout({ children }: { children: React.ReactNod
       ],
     },
     {
+      title: "الموقع الإلكتروني",
+      icon: "◱",
+      perm: "website.view",
+      items: [
+        { href: "/website/menu", label: "منيو الموقع والأسعار" },
+        { href: "/website/branches", label: "فروع الموقع وساعات العمل" },
+      ],
+    },
+    {
       title: "التقارير",
       icon: "◴",
       perm: "reports.view",
