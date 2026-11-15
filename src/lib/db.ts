@@ -60,6 +60,10 @@ export function dbErrorMessage(error: unknown): string {
   const raw = e?.message ?? "حدث خطأ غير متوقع";
 
   if (e?.code === "23505") {
+    if (e.constraint?.startsWith("products_") && e.constraint.includes("code")) {
+      return "كود المنتج مستخدم في هذه الجهة، اختر كودًا آخر";
+    }
+    if (e.constraint?.includes("shipment_no")) return "رقم الشحنة مستخدم في شحنة أخرى";
     if (e.constraint?.includes("code")) return "الكود مستخدم مسبقًا، اختر كودًا آخر";
     return "القيمة مكررة، تحقق من الحقول الفريدة";
   }

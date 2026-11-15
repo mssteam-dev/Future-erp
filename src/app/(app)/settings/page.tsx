@@ -2,6 +2,7 @@ import { requirePermission } from "@/lib/auth";
 import { getSettings } from "@/lib/data";
 import { monthName } from "@/lib/format";
 import { saveSettings } from "@/lib/actions/admin";
+import { saveValuationMethod } from "@/lib/actions/opening";
 import { Card, Field, FormRow, PageHeader } from "@/components/ui";
 
 export const dynamic = "force-dynamic";
@@ -74,9 +75,6 @@ export default async function SettingsPage({
               <input type="date" name="system_start_date" className="input input-num"
                 defaultValue={String(s.system_start_date ?? "").slice(0, 10)} />
             </Field>
-            <Field label="طريقة تقييم المخزون">
-              <input className="input" value="المتوسط المرجح المتحرك" disabled />
-            </Field>
           </FormRow>
         </Card>
 
@@ -109,6 +107,33 @@ export default async function SettingsPage({
           <button className="btn btn-primary">حفظ الإعدادات</button>
         </Card>
       </form>
+
+      <Card title="طريقة تقييم المخزون وتكلفة البضاعة المباعة">
+        <form action={saveValuationMethod}>
+          <FormRow cols={2}>
+            <Field
+              label="الطريقة المعتمدة"
+              hint="الأقدم أولًا يستهلك الدفعات بتكاليفها الأصلية؛ المتوسط المرجح يعتمد متوسط تكلفة الصنف"
+            >
+              <select
+                name="method"
+                className="select"
+                defaultValue={String(s.inventory_valuation ?? "fifo")}
+              >
+                <option value="fifo">الوارد أولًا يصرف أولًا (FIFO) — الافتراضي</option>
+                <option value="wavg">المتوسط المرجح المتحرك</option>
+              </select>
+            </Field>
+            <div style={{ display: "flex", alignItems: "flex-end" }}>
+              <button className="btn btn-ghost">تطبيق الطريقة</button>
+            </div>
+          </FormRow>
+          <div className="alert alert-warning" style={{ fontSize: 13 }}>
+            تبديل الطريقة لا يغيّر القيود السابقة ولا قيمة المخزون الحالية، وإنما يحدد كيف تُحسب تكلفة
+            المبيعات القادمة. الدفعات المفتوحة تبقى محفوظة في الحالتين.
+          </div>
+        </form>
+      </Card>
     </>
   );
 }

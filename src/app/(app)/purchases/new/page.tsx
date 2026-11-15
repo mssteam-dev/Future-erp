@@ -20,7 +20,7 @@ export default async function NewPurchasePage() {
     <>
       <PageHeader
         title="فاتورة مشتريات جديدة"
-        subtitle="تُضاف الكميات إلى مخزون الجهة المستفيدة ويُعاد حساب متوسط التكلفة"
+        subtitle="تُضاف الكميات إلى مخزون الجهة المستفيدة بدفعة مستقلة، وتُضاف مصاريف الشحن إلى تكلفتها النهائية"
       />
       <PurchaseInvoiceForm
         branches={branches}

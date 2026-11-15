@@ -48,12 +48,13 @@ begin
     ('C0004','فندق الأردن الكبير','0794444444', b1, 15000);
 
   -- المنتجات
-  insert into products (code, name_ar, category_id, uom_id, default_sale_price, default_unit_cost, reorder_level)
+  insert into products (code, name_ar, branch_id, supplier_id, category_id, uom_id, default_sale_price, default_unit_cost, reorder_level)
   select lpad(g::text, 4, '0'),
          (array['أرز بسمتي','زيت ذرة','سكر ناعم','شاي أخضر','قهوة عربية','معكرونة','عدس أحمر',
                 'حمص حب','فول مدمس','زيتون أخضر','لبنة','جبنة بيضاء','تونة معلبة','صلصة بندورة',
                 'ملح طعام','فلفل أسود','كمون مطحون','طحين فاخر','نشا ذرة','خميرة فورية'])[((g - 1) % 20) + 1]
            || ' ' || (array['1كغ','2كغ','5كغ','500غ'])[((g - 1) % 4) + 1],
+         hq, case when g <= 20 then sup1 else sup2 end,
          (select id from product_categories limit 1),
          (select id from units_of_measure where code='PCS'),
          round((2 + (g % 9) * 0.75)::numeric, 3),
@@ -62,12 +63,23 @@ begin
     from generate_series(1, 40) g;
 
   -- ------------------------- شراء مركزي للشركة الأم --------------------------
-  insert into purchase_invoices (invoice_no, invoice_date, supplier_id, branch_id, is_central, shipping_cost)
-  values (next_document_number('purchase_invoice', hq, d0), d0, sup1, hq, true, 120)
+  insert into purchase_invoices (invoice_no, shipment_no, invoice_date, supplier_id, branch_id, is_central,
+                                 carrier, alloc_method)
+  values (next_document_number('purchase_invoice', hq, d0), 'SHP-DEMO-1', d0, sup1, hq, true,
+          'شركة الشحن السريع', 'qty')
   returning id into pi;
 
-  insert into purchase_invoice_lines (invoice_id, line_no, product_id, quantity, unit_cost)
-  select pi, row_number() over (order by p.code), p.id, 2500, p.default_unit_cost from products p;
+  insert into purchase_invoice_lines (invoice_id, line_no, product_id, quantity, unit_cost, weight_kg)
+  select pi, row_number() over (order by p.code), p.id, 2500, p.default_unit_cost,
+         1 + (p.code::int % 4)
+    from products p where p.branch_id = hq;
+
+  insert into purchase_invoice_expenses (invoice_id, kind, description, amount) values
+    (pi, 'freight',   'أجور الشحن',        60),
+    (pi, 'customs',   'تخليص جمركي',       35),
+    (pi, 'transport', 'نقل داخلي',          15),
+    (pi, 'insurance', 'تأمين الشحنة',        8),
+    (pi, 'other',     'مصاريف متفرقة',      2);
 
   insert into purchase_invoice_payments (invoice_id, method, treasury_account_id, amount)
   select pi, 'bank', hq_bank, round(sum(quantity * unit_cost) * 0.4, 3)
@@ -75,12 +87,18 @@ begin
   perform post_purchase_invoice(pi);
 
   -- شراء ثانٍ بسعر مختلف لاختبار المتوسط المرجح
-  insert into purchase_invoices (invoice_no, invoice_date, supplier_id, branch_id, is_central)
-  values (next_document_number('purchase_invoice', hq, d0 + 5), d0 + 5, sup2, hq, true)
+  insert into purchase_invoices (invoice_no, shipment_no, invoice_date, supplier_id, branch_id, is_central,
+                                 carrier, alloc_method)
+  values (next_document_number('purchase_invoice', hq, d0 + 5), 'SHP-DEMO-2', d0 + 5, sup2, hq, true,
+          'شركة الشحن السريع', 'weight')
   returning id into pi;
-  insert into purchase_invoice_lines (invoice_id, line_no, product_id, quantity, unit_cost)
-  select pi, row_number() over (order by p.code), p.id, 1200, round(p.default_unit_cost * 1.15, 6)
-    from products p where p.code::int <= 20;
+  insert into purchase_invoice_lines (invoice_id, line_no, product_id, quantity, unit_cost, weight_kg)
+  select pi, row_number() over (order by p.code), p.id, 1200, round(p.default_unit_cost * 1.15, 6),
+         1 + (p.code::int % 4)
+    from products p where p.branch_id = hq and p.code::int <= 20;
+  insert into purchase_invoice_expenses (invoice_id, kind, description, amount) values
+    (pi, 'freight', 'أجور الشحن', 90),
+    (pi, 'customs', 'تخليص جمركي', 40);
   perform post_purchase_invoice(pi);
 
   -- -------------------------- تحويل البضاعة للفروع ---------------------------
@@ -91,7 +109,7 @@ begin
     returning id into tr;
 
     insert into stock_transfer_lines (transfer_id, line_no, product_id, quantity)
-    select tr, row_number() over (order by p.code), p.id, 800 from products p;
+    select tr, row_number() over (order by p.code), p.id, 800 from products p where p.branch_id = hq;
 
     perform post_stock_transfer(tr);
   end loop;
@@ -116,7 +134,7 @@ begin
              p.default_sale_price,
              case when (p.code::int + i) % 7 = 0 then 0.5 else 0 end
         from products p
-       where (p.code::int + i * j) % 4 = 0;
+       where p.branch_id = branch and (p.code::int + i * j) % 4 = 0;
 
       if exists (select 1 from sales_invoice_lines where invoice_id = si) then
         perform recalc_sales_invoice(si);
@@ -137,7 +155,7 @@ begin
 
           insert into sales_invoice_lines (invoice_id, line_no, product_id, quantity, unit_price)
           select si, row_number() over (order by p.code), p.id, 12, p.default_sale_price
-            from products p where (p.code::int + i) % 11 = 0;
+            from products p where p.branch_id = branch and (p.code::int + i) % 11 = 0;
 
           if exists (select 1 from sales_invoice_lines where invoice_id = si) then
             perform recalc_sales_invoice(si);
@@ -223,6 +241,15 @@ begin
     from expense_types et where et.code = 'ADMOTH'
   returning id into ex;
   perform post_expense(ex);
+
+  -- ------------------------- مصروف مدفوع مقدمًا ------------------------------
+  insert into prepaid_expenses (prepaid_no, name, branch_id, expense_type_id, pay_date, start_date, end_date,
+                                months, total_amount, payment_mode, treasury_account_id)
+  select 'PP-DEMO-1', 'إيجار مستودع الفرع الثاني — سنة', b2, et.id, d0, d0,
+         (d0 + interval '12 months - 1 day')::date, 12, 2400, 'cash', b2_cash
+    from expense_types et where et.code = 'RENT'
+  returning id into pr;
+  perform post_prepaid_expense(pr);
 
   -- ---------------------------- إيراد الشركة الأم ------------------------------
   insert into parent_revenues (revenue_no, revenue_date, revenue_type_id, description, amount,

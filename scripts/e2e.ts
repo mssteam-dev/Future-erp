@@ -118,7 +118,7 @@ async function main() {
     [invoiceId],
   );
   check(
-    "تكلفة البضاعة المباعة سُجِّلت بالمتوسط المرجح",
+    "تكلفة البضاعة المباعة سُجِّلت وفق طريقة التقييم",
     near(Number(invoice.cogs_total), Number(cogs.c)),
     String(invoice.cogs_total),
   );

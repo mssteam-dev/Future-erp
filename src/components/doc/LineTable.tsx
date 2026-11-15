@@ -5,6 +5,7 @@ import ProductPicker from "./ProductPicker";
 
 export type ProductOption = {
   id: string;
+  branch_id?: string;
   code: string;
   name_ar: string;
   default_sale_price: string;
@@ -22,6 +23,7 @@ export type DocLine = {
   tax_rate: number;
   counted?: number; // للجرد
   system_qty?: number;
+  weight_kg?: number; // إجمالي وزن السطر في الشحنة (كجم)
 };
 
 export type LineMode = "sale" | "purchase" | "transfer" | "count";
@@ -35,6 +37,17 @@ export function emptyLine(): DocLine {
     discount: 0,
     tax_rate: 0,
   };
+}
+
+/** عند تغيير الجهة تُحذف الأسطر التي منتجاتها من بطاقات جهة أخرى */
+export function dropForeignProducts(
+  lines: DocLine[],
+  products: ProductOption[],
+  branchId: string,
+): DocLine[] {
+  const ok = new Set(products.filter((p) => p.branch_id === branchId).map((p) => p.id));
+  const kept = lines.filter((l) => !l.product_id || ok.has(l.product_id));
+  return kept.length > 0 ? kept : [emptyLine()];
 }
 
 export function lineNet(l: DocLine): number {
@@ -59,6 +72,8 @@ export default function LineTable({
   taxEnabled,
   defaultTaxRate,
   stock,
+  branchId,
+  showWeight,
 }: {
   mode: LineMode;
   lines: DocLine[];
@@ -67,12 +82,20 @@ export default function LineTable({
   taxEnabled?: boolean;
   defaultTaxRate?: number;
   stock?: Record<string, { quantity: number; avg_cost: number }>;
+  /** إن وُجد فلا تُعرض إلا بطاقات منتجات هذه الجهة */
+  branchId?: string;
+  /** عمود وزن السطر الإجمالي (للشحنات) */
+  showWeight?: boolean;
 }) {
   const byId = useMemo(() => {
     const m: Record<string, ProductOption> = {};
     for (const p of products) m[p.id] = p;
     return m;
   }, [products]);
+  const pickable = useMemo(
+    () => (branchId ? products.filter((p) => p.branch_id === branchId) : products),
+    [products, branchId],
+  );
 
   const update = (key: string, patch: Partial<DocLine>) =>
     setLines(lines.map((l) => (l.key === key ? { ...l, ...patch } : l)));
@@ -114,6 +137,11 @@ export default function LineTable({
                 {mode === "sale" ? "سعر البيع" : "تكلفة الوحدة"}
               </th>
             ) : null}
+            {showWeight ? (
+              <th className="cell-num" style={{ width: 100 }}>
+                وزن السطر (كجم)
+              </th>
+            ) : null}
             {showDiscount ? (
               <th className="cell-num" style={{ width: 100 }}>
                 الخصم
@@ -147,7 +175,7 @@ export default function LineTable({
                 </td>
                 <td className="col-product" data-label="المنتج">
                   <ProductPicker
-                    products={products}
+                    products={pickable}
                     value={l.product_id}
                     onChange={(id) => onProduct(l.key, id)}
                     stock={stock}
@@ -201,6 +229,19 @@ export default function LineTable({
                       value={l.rate}
                       onChange={(e) => update(l.key, { rate: Number(e.target.value) })}
                       required
+                    />
+                  </td>
+                ) : null}
+                {showWeight ? (
+                  <td data-label="وزن السطر (كجم)">
+                    <input
+                      type="number"
+                      inputMode="decimal"
+                      step="0.0001"
+                      min="0"
+                      className="input input-num"
+                      value={l.weight_kg ?? 0}
+                      onChange={(e) => update(l.key, { weight_kg: Number(e.target.value) })}
                     />
                   </td>
                 ) : null}

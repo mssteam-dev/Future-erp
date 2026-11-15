@@ -8,6 +8,8 @@ type Option = { id: string; name_ar: string; depth?: string | number; path?: str
 
 export type ProductInitial = {
   id: string;
+  branch_id: string;
+  supplier_id: string | null;
   code: string;
   name_ar: string;
   category_id: string | null;
@@ -45,10 +47,16 @@ async function shrink(file: File, max = 480): Promise<string> {
 export default function ProductForm({
   categories,
   uoms,
+  branches,
+  suppliers,
+  defaultBranchId,
   initial,
 }: {
   categories: Option[];
   uoms: Option[];
+  branches: { id: string; name_ar: string }[];
+  suppliers: { id: string; name: string }[];
+  defaultBranchId?: string;
   initial?: ProductInitial;
 }) {
   const [preview, setPreview] = useState<string | null>(
@@ -153,6 +161,37 @@ export default function ProductForm({
 
           {/* ------------------------------ الحقول ------------------------------ */}
           <div style={{ flex: "1 1 min(100%, 420px)", minWidth: 0 }}>
+            <FormRow cols={2}>
+              <Field
+                label="الجهة"
+                hint={initial ? "بطاقة المنتج تتبع جهة واحدة ولا تُنقل" : "لكل جهة بطاقات منتجاتها المستقلة"}
+              >
+                <select
+                  name="branch_id"
+                  className="select"
+                  defaultValue={initial?.branch_id ?? defaultBranchId ?? branches[0]?.id ?? ""}
+                  disabled={Boolean(initial)}
+                  required
+                >
+                  {branches.map((b) => (
+                    <option key={b.id} value={b.id}>
+                      {b.name_ar}
+                    </option>
+                  ))}
+                </select>
+              </Field>
+              <Field label="المورد الأساسي">
+                <select name="supplier_id" className="select" defaultValue={initial?.supplier_id ?? ""}>
+                  <option value="">—</option>
+                  {suppliers.map((s) => (
+                    <option key={s.id} value={s.id}>
+                      {s.name}
+                    </option>
+                  ))}
+                </select>
+              </Field>
+            </FormRow>
+
             <FormRow cols={2}>
               <Field label="الكود">
                 <input

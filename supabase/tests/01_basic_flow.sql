@@ -9,7 +9,7 @@ do $$
 declare
   d           date := current_date;
   hq          uuid; b1 uuid; b2 uuid; b3 uuid;
-  p1          uuid; p2 uuid;
+  p1          uuid; p2 uuid; p1b1 uuid;
   sup         uuid; cus uuid;
   hq_bank     uuid; hq_cash uuid; b1_cash uuid;
   pi1         uuid; pi2 uuid; tr uuid; si1 uuid; si2 uuid; sr uuid; col uuid;
@@ -65,13 +65,16 @@ begin
   insert into stock_transfer_lines (transfer_id, line_no, product_id, quantity)
   values (tr, 1, p1, 50);
   perform post_stock_transfer(tr);
+  -- بطاقة المنتج في الفرع الأول أُنشئت تلقائيًا بالتحويل (مطابقة بالكود)
+  select id into p1b1 from products where branch_id = b1 and code = 'P1';
+  perform assert_true('بطاقة منتج الفرع الأول أُنشئت تلقائيًا ومستقلة', p1b1 is not null and p1b1 <> p1);
 
   perform assert_eq('مخزون الشركة الأم بعد التحويل', 50,
     (select quantity from product_branch_stock where product_id = p1 and branch_id = hq));
   perform assert_eq('مخزون الفرع الأول بعد التحويل', 50,
-    (select quantity from product_branch_stock where product_id = p1 and branch_id = b1));
+    (select quantity from product_branch_stock where product_id = p1b1 and branch_id = b1));
   perform assert_eq('تكلفة الوحدة في الفرع = تكلفة المصدر', 10,
-    (select avg_cost from product_branch_stock where product_id = p1 and branch_id = b1));
+    (select avg_cost from product_branch_stock where product_id = p1b1 and branch_id = b1));
 
   -- التحويل ليس إيرادًا ولا مصروفًا
   perform assert_eq('التحويل لم يسجل أي إيراد', 0,
@@ -88,7 +91,7 @@ begin
   insert into sales_invoices (invoice_no, invoice_date, branch_id, customer_name)
   values (next_document_number('sales_invoice', b1, d), d, b1, 'عميل نقدي') returning id into si1;
   insert into sales_invoice_lines (invoice_id, line_no, product_id, quantity, unit_price)
-  values (si1, 1, p1, 30, 15);
+  values (si1, 1, p1b1, 30, 15);
   insert into sales_invoice_payments (invoice_id, method, treasury_account_id, amount)
   values (si1, 'cash', b1_cash, 450);
   perform post_sales_invoice(si1);
@@ -101,7 +104,7 @@ begin
   insert into sales_invoices (invoice_no, invoice_date, branch_id, customer_id)
   values (next_document_number('sales_invoice', b1, d), d, b1, cus) returning id into si2;
   insert into sales_invoice_lines (invoice_id, line_no, product_id, quantity, unit_price)
-  values (si2, 1, p1, 10, 15) returning id into line;
+  values (si2, 1, p1b1, 10, 15) returning id into line;
   perform post_sales_invoice(si2);
 
   perform assert_eq('ذمة العميل بعد البيع الآجل', 150, customer_balance(cus));
@@ -111,12 +114,12 @@ begin
   insert into sales_returns (return_no, return_date, branch_id, customer_id, invoice_id, refund_mode)
   values (next_document_number('sales_return', b1, d), d, b1, cus, si2, 'credit') returning id into sr;
   insert into sales_return_lines (return_id, line_no, product_id, source_line_id, quantity, unit_price)
-  values (sr, 1, p1, line, 2, 15);
+  values (sr, 1, p1b1, line, 2, 15);
   perform post_sales_return(sr);
 
   perform assert_eq('ذمة العميل بعد المرتجع', 120, customer_balance(cus));
   perform assert_eq('المخزون بعد المرتجع', 12,
-    (select quantity from product_branch_stock where product_id = p1 and branch_id = b1));
+    (select quantity from product_branch_stock where product_id = p1b1 and branch_id = b1));
 
   -- ---------------------- 7) تحصيل 100 نقدًا ----------------------------------
   insert into collections (collection_no, collection_date, branch_id, customer_id, method,

@@ -16,7 +16,13 @@ export default function Filters({
   branches: BranchOption[];
   showBranch?: boolean;
   showPeriod?: boolean;
-  extra?: { name: string; label: string; options: { value: string; label: string }[] }[];
+  extra?: {
+    name: string;
+    label: string;
+    options: { value: string; label: string }[];
+    /** القيمة الظاهرة حين لا يوجد المعامل في الرابط */
+    defaultValue?: string;
+  }[];
   allBranchesLabel?: string;
   /** مفتاح التقرير في /api/export — يُظهر زر تصدير CSV */
   exportReport?: string;
@@ -90,7 +96,7 @@ export default function Filters({
           <label className="label">{field.label}</label>
           <select
             className="select"
-            defaultValue={params.get(field.name) ?? ""}
+            defaultValue={params.get(field.name) ?? field.defaultValue ?? ""}
             onChange={(e) => set(field.name, e.target.value)}
           >
             {field.options.map((o) => (
@@ -103,16 +109,24 @@ export default function Filters({
       ))}
 
       <button className="btn btn-ghost btn-sm" onClick={() => window.print()} type="button">
-        طباعة
+        طباعة / PDF
       </button>
 
       {exportReport ? (
-        <a
-          className="btn btn-ghost btn-sm"
-          href={`/api/export?report=${exportReport}&${params.toString()}`}
-        >
-          تصدير CSV
-        </a>
+        <>
+          <a
+            className="btn btn-ghost btn-sm"
+            href={`/api/export?report=${exportReport}&format=xlsx&${params.toString()}`}
+          >
+            تصدير Excel
+          </a>
+          <a
+            className="btn btn-ghost btn-sm"
+            href={`/api/export?report=${exportReport}&${params.toString()}`}
+          >
+            CSV
+          </a>
+        </>
       ) : null}
     </div>
   );

@@ -132,25 +132,31 @@ export async function saveProduct(formData: FormData): Promise<void> {
         `update products
             set code = $2, name_ar = $3, category_id = $4, uom_id = $5,
                 default_sale_price = $6, default_unit_cost = $7, reorder_level = $8,
-                tax_rate = $9, barcode = $10, notes = $11, is_active = $12
+                tax_rate = $9, barcode = $10, notes = $11, is_active = $12, supplier_id = $13
           where id = $1`,
         [id, str(formData, "code"), name, nullable(formData, "category_id"),
          nullable(formData, "uom_id"), num(formData, "default_sale_price"),
          num(formData, "default_unit_cost"), num(formData, "reorder_level"),
          formData.get("tax_rate") === "" ? null : num(formData, "tax_rate"),
          nullable(formData, "barcode"), nullable(formData, "notes"),
-         str(formData, "is_active") === "on"],
+         str(formData, "is_active") === "on", nullable(formData, "supplier_id")],
       );
     } else {
+      const branchId = str(formData, "branch_id");
+      if (!branchId) throw new Error("اختر الجهة التي تتبعها بطاقة المنتج");
       const { rows } = await client.query(
-        `insert into products (code, name_ar, category_id, uom_id, default_sale_price,
-                               default_unit_cost, reorder_level, tax_rate, barcode, notes)
-         values (coalesce(nullif($1,''), lpad((select count(*)+1 from products)::text, 4, '0')),
-                 $2, $3, $4, $5, $6, $7, $8, $9, $10)
+        `insert into products (branch_id, supplier_id, code, name_ar, category_id, uom_id,
+                               default_sale_price, default_unit_cost, reorder_level, tax_rate,
+                               barcode, notes)
+         values ($1, $2,
+                 coalesce(nullif($3,''),
+                          lpad((select count(*)+1 from products where branch_id = $1)::text, 4, '0')),
+                 $4, $5, $6, $7, $8, $9, $10, $11, $12)
          returning id`,
-        [str(formData, "code"), name, nullable(formData, "category_id"),
-         nullable(formData, "uom_id"), num(formData, "default_sale_price"),
-         num(formData, "default_unit_cost"), num(formData, "reorder_level"),
+        [branchId, nullable(formData, "supplier_id"), str(formData, "code"), name,
+         nullable(formData, "category_id"), nullable(formData, "uom_id"),
+         num(formData, "default_sale_price"), num(formData, "default_unit_cost"),
+         num(formData, "reorder_level"),
          formData.get("tax_rate") === "" ? null : num(formData, "tax_rate"),
          nullable(formData, "barcode"), nullable(formData, "notes")],
       );

@@ -45,6 +45,49 @@ const REPORTS: Record<string, { sql: string; args: (p: URLSearchParams) => unkno
     sql: "select * from report_company_summary($1::date, $2::date)",
     args: (p) => [p.get("from"), p.get("to")],
   },
+  shipments: {
+    name: "تقرير الشحنات",
+    sql: "select * from report_shipments($1::date, $2::date, $3::uuid)",
+    args: (p) => [p.get("from"), p.get("to"), p.get("branch") || null],
+  },
+  "product-costs": {
+    name: "بطاقات تكلفة المنتجات",
+    sql: "select * from report_product_costs($1::uuid)",
+    args: (p) => [p.get("branch") || null],
+  },
+  "stock-layers": {
+    name: "دفعات المخزون",
+    sql: "select * from report_stock_layers($1::uuid, null, $2)",
+    args: (p) => [p.get("branch") || null, p.get("open") !== "all"],
+  },
+  prepaid: {
+    name: "المصاريف المدفوعة مقدمًا",
+    sql: "select * from report_prepaid($1::uuid)",
+    args: (p) => [p.get("branch") || null],
+  },
+  "operating-expenses": {
+    name: "المصاريف التشغيلية",
+    sql: "select * from report_operating_expenses($1::date, $2::date, $3::uuid)",
+    args: (p) => [p.get("from"), p.get("to"), p.get("branch") || null],
+  },
+  transfers: {
+    name: "التحويلات بين الجهات",
+    sql: "select * from report_transfers($1::date, $2::date)",
+    args: (p) => [p.get("from"), p.get("to")],
+  },
+  consolidated: {
+    name: "التقرير المجمّع",
+    sql: "select * from report_consolidated($1::date, $2::date)",
+    args: (p) => [p.get("from"), p.get("to")],
+  },
+  "period-close": {
+    name: "تقرير الإقفال الشهري",
+    sql: "select * from report_period_close($1::int, $2::int)",
+    args: (p) => [
+      Number(p.get("year")) || new Date().getFullYear(),
+      Number(p.get("month")) || new Date().getMonth() + 1,
+    ],
+  },
 };
 
 const HEADERS: Record<string, string> = {
@@ -66,7 +109,44 @@ const HEADERS: Record<string, string> = {
   closing_balance: "الرصيد الختامي", collection_date: "التاريخ", collection_no: "رقم السند",
   customer_name: "العميل", method: "طريقة التحصيل", treasury_name: "الحساب",
   amount: "المبلغ", reference: "المرجع",
+  invoice_no: "رقم الفاتورة", shipment_no: "رقم الشحنة", invoice_date: "التاريخ",
+  supplier_name: "المورد", carrier: "جهة الشحن", alloc_method: "طريقة التوزيع",
+  pieces: "القطع", total_weight_kg: "الوزن (كجم)", goods_value: "قيمة البضاعة",
+  freight: "الشحن", customs: "التخليص", transport: "النقل", insurance: "التأمين",
+  other_expenses: "مصاريف أخرى", landed_total: "الإجمالي بعد المصاريف",
+  per_kg_cost: "مصاريف الكيلو", per_piece_cost: "مصاريف القطعة",
+  base_price: "السعر الأساسي", loaded_expense: "مصاريف محمّلة", final_cost: "التكلفة النهائية",
+  sale_price: "سعر البيع", last_weight_kg: "وزن آخر شحنة", unit_weight_kg: "وزن القطعة",
+  qty_available: "المتاح", qty_returned: "المرتجع",
+  received_date: "تاريخ الاستلام", doc_type: "نوع المستند", doc_no: "المستند / الشحنة",
+  original_qty: "الكمية الأصلية", remaining_qty: "المتبقي", unit_cost: "تكلفة القطعة",
+  remaining_value: "قيمة المتبقي",
+  prepaid_no: "الرقم", name: "البيان", expense_type: "نوع المصروف", pay_date: "تاريخ الدفع",
+  start_date: "من", end_date: "إلى", months: "الأشهر", total_amount: "المبلغ المدفوع",
+  monthly_amount: "القسط الشهري", months_charged: "أشهر محمّلة", amortized_amount: "المحمّل",
+  remaining_amount: "المتبقي", status: "الحالة",
+  is_admin: "إداري", transfer_no: "رقم التحويل", transfer_date: "التاريخ",
+  from_branch: "من", to_branch: "إلى", lines_count: "الأصناف", total_qty: "الكمية",
+  total_cost: "التكلفة الأصلية",
+  external_sales: "مبيعات خارجية (صافي)", other_revenue: "إيرادات أخرى",
+  operating_expenses: "المصاريف", transfers_out: "تحويلات صادرة", transfers_in: "تحويلات واردة",
+  purchases: "المشتريات", prepaid_balance: "مدفوع مقدمًا",
 };
+
+/** أعمدة نصية لا تُحوَّل إلى أرقام في ملف Excel حتى لا تضيع الأصفار من الأكواد */
+const TEXT_COLUMN = /(code|_no$|^no$|name|type|status|method|kind|carrier|reference|alloc_method)/;
+
+function cellValue(key: string, value: unknown): string | number | boolean | null {
+  if (value === null || value === undefined) return null;
+  if (value instanceof Date) {
+    const d = value;
+    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+  }
+  if (typeof value === "number" || typeof value === "boolean") return value;
+  const s = String(value);
+  if (!TEXT_COLUMN.test(key) && /^-?\d+(\.\d+)?$/.test(s)) return Number(s);
+  return s;
+}
 
 function csvCell(value: unknown): string {
   if (value === null || value === undefined) return "";
@@ -88,6 +168,40 @@ export async function GET(request: NextRequest) {
 
   const rows = await queryAs<Record<string, unknown>>(report.sql, report.args(params));
   const columns = rows.length ? Object.keys(rows[0]).filter((c) => !c.endsWith("_id")) : [];
+
+  if (params.get("format") === "xlsx") {
+    const ExcelJS = (await import("exceljs")).default;
+    const wb = new ExcelJS.Workbook();
+    const ws = wb.addWorksheet(report.name.slice(0, 31), {
+      views: [{ rightToLeft: true, state: "frozen", ySplit: 1 }],
+    });
+    ws.columns = columns.map((c) => ({
+      header: HEADERS[c] ?? c,
+      key: c,
+      width: Math.max(12, Math.min(34, (HEADERS[c] ?? c).length + 6)),
+    }));
+    for (const r of rows) {
+      ws.addRow(Object.fromEntries(columns.map((c) => [c, cellValue(c, r[c])])));
+    }
+    const head = ws.getRow(1);
+    head.font = { bold: true, color: { argb: "FFFFFFFF" } };
+    head.fill = { type: "pattern", pattern: "solid", fgColor: { argb: "FF1F3A6E" } };
+    head.alignment = { horizontal: "center", vertical: "middle" };
+    ws.eachRow((row, n) => {
+      if (n === 1) return;
+      row.eachCell((cell) => {
+        if (typeof cell.value === "number") cell.numFmt = "#,##0.00##";
+      });
+    });
+    const buffer = Buffer.from(await wb.xlsx.writeBuffer());
+    const xlsxName = `${report.name}-${params.get("from") ?? ""}.xlsx`;
+    return new Response(buffer, {
+      headers: {
+        "Content-Type": "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+        "Content-Disposition": `attachment; filename*=UTF-8''${encodeURIComponent(xlsxName)}`,
+      },
+    });
+  }
 
   const lines = [
     columns.map((c) => csvCell(HEADERS[c] ?? c)).join(","),

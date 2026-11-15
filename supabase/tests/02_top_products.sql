@@ -53,13 +53,13 @@ begin
   insert into stock_transfers (transfer_no, transfer_date, from_branch_id, to_branch_id)
   values (next_document_number('stock_transfer', hq, d), d, hq, b1) returning id into tr;
   insert into stock_transfer_lines (transfer_id, line_no, product_id, quantity)
-  select tr, row_number() over (order by p.code), p.id, 400 from products p;
+  select tr, row_number() over (order by p.code), p.id, 400 from products p where p.branch_id = hq;
   perform post_stock_transfer(tr);
 
   insert into stock_transfers (transfer_no, transfer_date, from_branch_id, to_branch_id)
   values (next_document_number('stock_transfer', hq, d), d, hq, b2) returning id into tr;
   insert into stock_transfer_lines (transfer_id, line_no, product_id, quantity)
-  select tr, row_number() over (order by p.code), p.id, 300 from products p;
+  select tr, row_number() over (order by p.code), p.id, 300 from products p where p.branch_id = hq;
   perform post_stock_transfer(tr);
 
   -- ------------------ مبيعات متكررة: كل منتج في عدة فواتير --------------------
@@ -69,7 +69,7 @@ begin
     values (next_document_number('sales_invoice', b1, d), d, b1, 'عميل نقدي') returning id into si;
 
     insert into sales_invoice_lines (invoice_id, line_no, product_id, quantity, unit_price)
-    select si, row_number() over (order by p.code), p.id, 2, p.default_sale_price from products p;
+    select si, row_number() over (order by p.code), p.id, 2, p.default_sale_price from products p where p.branch_id = b1;
 
     perform recalc_sales_invoice(si);
     insert into sales_invoice_payments (invoice_id, method, treasury_account_id, amount)
@@ -82,14 +82,14 @@ begin
   values (next_document_number('sales_invoice', b2, d), d, b2, 'عميل نقدي') returning id into si;
   insert into sales_invoice_lines (invoice_id, line_no, product_id, quantity, unit_price)
   select si, row_number() over (order by p.code), p.id, 1, p.default_sale_price
-    from products p where p.code::int <= 20;
+    from products p where p.code::int <= 20 and p.branch_id = b2;
   perform recalc_sales_invoice(si);
   insert into sales_invoice_payments (invoice_id, method, treasury_account_id, amount)
   select si, 'cash', b2_cash, total from sales_invoices where id = si;
   perform post_sales_invoice(si);
 
   -- ------------------- منتج بربح سالب (بيع بأقل من التكلفة) -------------------
-  select id into pid from products where code = '0007';
+  select id into pid from products where code = '0007' and branch_id = b1;
   insert into sales_invoices (invoice_no, invoice_date, branch_id, customer_name)
   values (next_document_number('sales_invoice', b1, d), d, b1, 'عميل نقدي') returning id into si;
   insert into sales_invoice_lines (invoice_id, line_no, product_id, quantity, unit_price)
@@ -103,7 +103,7 @@ begin
     (select gross_profit < 0 from report_product_profitability(d, d, b1) where product_code = '0007'));
 
   -- ----------------------------- مرتجع مبيعات --------------------------------
-  select id into pid from products where code = '0003';
+  select id into pid from products where code = '0003' and branch_id = b1;
   insert into sales_returns (return_no, return_date, branch_id, refund_mode, treasury_account_id)
   values (next_document_number('sales_return', b1, d), d, b1, 'cash', b1_cash) returning id into sr;
   insert into sales_return_lines (return_id, line_no, product_id, quantity, unit_price)

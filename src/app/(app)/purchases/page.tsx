@@ -17,7 +17,7 @@ export default async function PurchasesPage({
   const branches = await getBranches();
 
   const rows = await queryAs<Record<string, string>>(
-    `select i.id, i.invoice_no, i.invoice_date, i.supplier_ref_no, s.name as supplier,
+    `select i.id, i.invoice_no, i.invoice_date, i.supplier_ref_no, i.shipment_no, s.name as supplier,
             b.name_ar as branch_name, i.is_central, i.total, i.paid_total, i.remaining, i.status
        from purchase_invoices i
        join suppliers s on s.id = i.supplier_id
@@ -58,6 +58,7 @@ export default async function PurchasesPage({
                   <th>الرقم</th>
                   <th>التاريخ</th>
                   <th>المورد</th>
+                  <th>الشحنة</th>
                   <th>الجهة المستفيدة</th>
                   <th>النوع</th>
                   <th className="cell-num">الإجمالي</th>
@@ -76,6 +77,7 @@ export default async function PurchasesPage({
                     </td>
                     <td className="num">{dateStr(r.invoice_date)}</td>
                     <td>{r.supplier}</td>
+                    <td className="num" style={{ color: "var(--muted)", fontSize: 12.5 }}>{r.shipment_no ?? "—"}</td>
                     <td>{r.branch_name}</td>
                     <td style={{ color: "var(--muted)", fontSize: 12.5 }}>
                       {String(r.is_central) === "true" ? "مركزي" : "مباشر"}

@@ -2,7 +2,13 @@
 
 import { useActionState, useState } from "react";
 import { saveStockAdjustment, saveStockTransfer } from "@/lib/actions/inventory";
-import LineTable, { type DocLine, type ProductOption, emptyLine, round } from "./LineTable";
+import LineTable, {
+  type DocLine,
+  type ProductOption,
+  dropForeignProducts,
+  emptyLine,
+  round,
+} from "./LineTable";
 import { Card, Field, FormRow } from "../ui";
 import type { StockMapClient } from "./types";
 
@@ -47,7 +53,16 @@ export function TransferForm({
             />
           </Field>
           <Field label="من وحدة">
-            <select name="from_branch_id" className="select" value={from} onChange={(e) => setFrom(e.target.value)} required>
+            <select
+              name="from_branch_id"
+              className="select"
+              value={from}
+              onChange={(e) => {
+                setFrom(e.target.value);
+                setLines(dropForeignProducts(lines, products, e.target.value));
+              }}
+              required
+            >
               {branches.map((b) => (
                 <option key={b.id} value={b.id}>{b.name_ar}</option>
               ))}
@@ -70,7 +85,7 @@ export function TransferForm({
       </Card>
 
       <Card title="الأصناف المحوَّلة" padded={false}>
-        <LineTable mode="transfer" lines={lines} setLines={setLines} products={products} stock={stock} />
+        <LineTable mode="transfer" lines={lines} setLines={setLines} products={products} branchId={from} stock={stock} />
       </Card>
 
       <Card>
@@ -99,14 +114,16 @@ export function AdjustmentForm({
   branches,
   products,
   stockByBranch,
+  initialKind = "count",
 }: {
   branches: { id: string; name_ar: string; kind: string }[];
   products: ProductOption[];
   stockByBranch: StockMapClient;
+  initialKind?: "count" | "adjustment" | "opening";
 }) {
   const [state, action, pending] = useActionState(saveStockAdjustment, {});
   const [branchId, setBranchId] = useState(branches[0]?.id ?? "");
-  const [kind, setKind] = useState("count");
+  const [kind, setKind] = useState<string>(initialKind);
   const [lines, setLines] = useState<DocLine[]>([emptyLine()]);
 
   const stock = stockByBranch[branchId] ?? {};
@@ -141,7 +158,16 @@ export function AdjustmentForm({
             />
           </Field>
           <Field label="الوحدة">
-            <select name="branch_id" className="select" value={branchId} onChange={(e) => setBranchId(e.target.value)} required>
+            <select
+              name="branch_id"
+              className="select"
+              value={branchId}
+              onChange={(e) => {
+                setBranchId(e.target.value);
+                setLines(dropForeignProducts(lines, products, e.target.value));
+              }}
+              required
+            >
               {branches.map((b) => (
                 <option key={b.id} value={b.id}>{b.name_ar}</option>
               ))}
@@ -161,7 +187,7 @@ export function AdjustmentForm({
       </Card>
 
       <Card title="الأصناف" padded={false}>
-        <LineTable mode="count" lines={lines} setLines={setLines} products={products} stock={stock} />
+        <LineTable mode="count" lines={lines} setLines={setLines} products={products} branchId={branchId} stock={stock} />
       </Card>
 
       <Card>

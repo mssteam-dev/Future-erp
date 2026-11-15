@@ -3,7 +3,14 @@
 import { useActionState, useState } from "react";
 import { saveSalesReturn } from "@/lib/actions/sales";
 import { savePurchaseReturn } from "@/lib/actions/purchases";
-import LineTable, { type DocLine, type ProductOption, emptyLine, lineTax, round } from "./LineTable";
+import LineTable, {
+  type DocLine,
+  type ProductOption,
+  dropForeignProducts,
+  emptyLine,
+  lineTax,
+  round,
+} from "./LineTable";
 import { Totals } from "./SalesInvoiceForm";
 import { Card, Field, FormRow } from "../ui";
 
@@ -52,7 +59,10 @@ export function SalesReturnForm({
           </Field>
           <Field label="الفرع">
             <select name="branch_id" className="select" value={branchId}
-              onChange={(e) => setBranchId(e.target.value)} required>
+              onChange={(e) => {
+                setBranchId(e.target.value);
+                setLines(dropForeignProducts(lines, products, e.target.value));
+              }} required>
               {branches.map((b) => (<option key={b.id} value={b.id}>{b.name_ar}</option>))}
             </select>
           </Field>
@@ -86,7 +96,7 @@ export function SalesReturnForm({
       </Card>
 
       <Card title="الأصناف المرتجعة" padded={false}>
-        <LineTable mode="sale" lines={lines} setLines={setLines} products={products}
+        <LineTable mode="sale" lines={lines} setLines={setLines} products={products} branchId={branchId}
           taxEnabled={taxEnabled} defaultTaxRate={defaultTaxRate} />
       </Card>
 
@@ -158,7 +168,10 @@ export function PurchaseReturnForm({
           </Field>
           <Field label="الوحدة">
             <select name="branch_id" className="select" value={branchId}
-              onChange={(e) => setBranchId(e.target.value)} required>
+              onChange={(e) => {
+                setBranchId(e.target.value);
+                setLines(dropForeignProducts(lines, products, e.target.value));
+              }} required>
               {branches.map((b) => (<option key={b.id} value={b.id}>{b.name_ar}</option>))}
             </select>
           </Field>
@@ -189,7 +202,7 @@ export function PurchaseReturnForm({
       </Card>
 
       <Card title="الأصناف المرتجعة" padded={false}>
-        <LineTable mode="purchase" lines={lines} setLines={setLines} products={products}
+        <LineTable mode="purchase" lines={lines} setLines={setLines} products={products} branchId={branchId}
           taxEnabled={taxEnabled} defaultTaxRate={defaultTaxRate} />
       </Card>
 

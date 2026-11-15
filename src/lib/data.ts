@@ -26,9 +26,11 @@ export async function getTreasuryAccounts(branchId?: string) {
   );
 }
 
+/** بطاقات المنتجات — لكل جهة بطاقاتها المستقلة، فتحمل كل بطاقة معرّف جهتها */
 export async function getProducts() {
   return queryAs<{
     id: string;
+    branch_id: string;
     code: string;
     name_ar: string;
     default_sale_price: string;
@@ -36,7 +38,7 @@ export async function getProducts() {
     tax_rate: string | null;
     has_image: boolean;
   }>(
-    `select id, code, name_ar, default_sale_price, default_unit_cost, tax_rate,
+    `select id, branch_id, code, name_ar, default_sale_price, default_unit_cost, tax_rate,
             (image is not null) as has_image
        from products where is_active order by code`,
   );

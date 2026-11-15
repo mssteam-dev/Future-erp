@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { queryAs } from "@/lib/auth";
+import { getBranches, getSuppliers } from "@/lib/data";
 import { money, qty } from "@/lib/format";
 import { saveCategory, saveUom } from "@/lib/actions/inventory";
 import ProductForm from "@/components/ProductForm";
@@ -11,28 +12,33 @@ export const dynamic = "force-dynamic";
 export default async function ProductsPage({
   searchParams,
 }: {
-  searchParams: Promise<{ error?: string; category?: string }>;
+  searchParams: Promise<{ error?: string; category?: string; branch?: string }>;
 }) {
-  const { error, category } = await searchParams;
+  const { error, category, branch } = await searchParams;
 
-  const [products, categories, uoms] = await Promise.all([
+  const [products, categories, uoms, branches, suppliers] = await Promise.all([
     queryAs<Record<string, string>>(
-      `select p.id, p.code, p.name_ar, p.default_sale_price, p.default_unit_cost,
-              p.reorder_level, p.is_active, (p.image is not null) as has_image,
-              c.name_ar as category_name, u.name_ar as uom_name,
-              coalesce((select sum(s.quantity) from product_branch_stock s where s.product_id = p.id), 0) as total_qty,
-              coalesce((select sum(s.stock_value) from product_branch_stock s where s.product_id = p.id), 0) as total_value
+      `select p.id, p.code, p.name_ar, p.default_sale_price, p.reorder_level, p.is_active,
+              (p.image is not null) as has_image,
+              b.name_ar as branch_name, c.name_ar as category_name, u.name_ar as uom_name,
+              rc.supplier_name, rc.base_price, rc.loaded_expense, rc.final_cost, rc.unit_weight_kg,
+              rc.qty_available, rc.qty_sold, rc.qty_returned, rc.stock_value as total_value
          from products p
+         join branches b on b.id = p.branch_id
          left join product_categories c on c.id = p.category_id
          left join units_of_measure u on u.id = p.uom_id
+         left join report_product_costs($2::uuid) rc on rc.product_id = p.id
         where ($1::uuid is null or p.category_id in (select id from category_descendants($1::uuid)))
-        order by p.code`,
-      [category || null],
+          and ($2::uuid is null or p.branch_id = $2::uuid)
+        order by b.sort_order, p.code`,
+      [category || null, branch || null],
     ),
     queryAs<Record<string, string>>(
       "select id, code, name_ar, depth, path from category_tree()",
     ),
     queryAs<Record<string, string>>("select id, code, name_ar from units_of_measure order by name_ar"),
+    getBranches(),
+    getSuppliers(),
   ]);
 
   const totalValue = products.reduce((a, p) => a + Number(p.total_value), 0);
@@ -41,7 +47,7 @@ export default async function ProductsPage({
     <>
       <PageHeader
         title="المنتجات"
-        subtitle="تعريف موحَّد للمنتج، والكميات والتكاليف مفصولة حسب الفرع"
+        subtitle="لكل جهة بطاقات منتجاتها المستقلة: موردها وتكلفتها ومخزونها ومبيعاتها منفصلة عن بقية الجهات"
       />
       {error ? <div className="alert alert-error" style={{ marginBottom: 14 }}>{error}</div> : null}
 
@@ -51,9 +57,26 @@ export default async function ProductsPage({
         <Stat label="قيمة المخزون الكلية" value={money(totalValue)} tone="brand" />
       </Grid>
 
-      <ProductForm categories={categories as never} uoms={uoms as never} />
+      <ProductForm
+        categories={categories as never}
+        uoms={uoms as never}
+        branches={branches}
+        suppliers={suppliers}
+        defaultBranchId={branch || undefined}
+      />
 
       <form method="get" className="card filters no-print">
+        <div className="filter-field" style={{ width: 220 }}>
+          <label className="label">الجهة</label>
+          <select name="branch" className="select" defaultValue={branch ?? ""}>
+            <option value="">كل الجهات</option>
+            {branches.map((b) => (
+              <option key={b.id} value={b.id}>
+                {b.name_ar}
+              </option>
+            ))}
+          </select>
+        </div>
         <div className="filter-field" style={{ width: 280 }}>
           <label className="label">التصنيف</label>
           <select name="category" className="select" defaultValue={category ?? ""}>
@@ -67,7 +90,7 @@ export default async function ProductsPage({
           </select>
         </div>
         <button className="btn btn-ghost btn-sm">تصفية</button>
-        {category ? (
+        {category || branch ? (
           <a href="/products" className="btn btn-ghost btn-sm" style={{ textDecoration: "none" }}>
             إلغاء التصفية
           </a>
@@ -83,14 +106,18 @@ export default async function ProductsPage({
               <thead>
                 <tr>
                   <th style={{ width: 52 }}>الصورة</th>
+                  <th>الجهة</th>
                   <th>الكود</th>
                   <th>المنتج</th>
-                  <th>التصنيف</th>
-                  <th>الوحدة</th>
+                  <th>المورد</th>
+                  <th className="cell-num">السعر الأساسي</th>
+                  <th className="cell-num">مصاريف محمّلة</th>
+                  <th className="cell-num">التكلفة النهائية</th>
                   <th className="cell-num">سعر البيع</th>
-                  <th className="cell-num">التكلفة الافتراضية</th>
-                  <th className="cell-num">حد الطلب</th>
-                  <th className="cell-num">الكمية الكلية</th>
+                  <th className="cell-num">وزن القطعة</th>
+                  <th className="cell-num">المتاح</th>
+                  <th className="cell-num">المباع</th>
+                  <th className="cell-num">المرتجع</th>
                   <th className="cell-num">قيمة المخزون</th>
                   <th>الحالة</th>
                   <th></th>
@@ -104,14 +131,26 @@ export default async function ProductsPage({
                         product={{ id: p.id, name_ar: p.name_ar, has_image: String(p.has_image) === "true" }}
                       />
                     </td>
+                    <td>{p.branch_name}</td>
                     <td className="num">{p.code}</td>
-                    <td style={{ fontWeight: 600 }}>{p.name_ar}</td>
-                    <td style={{ color: "var(--muted)" }}>{p.category_name}</td>
-                    <td>{p.uom_name}</td>
+                    <td style={{ fontWeight: 600 }}>
+                      {p.name_ar}
+                      {p.category_name ? (
+                        <div style={{ fontSize: 11.5, color: "var(--muted)", fontWeight: 400 }}>
+                          {p.category_name}
+                          {p.uom_name ? ` — ${p.uom_name}` : ""}
+                        </div>
+                      ) : null}
+                    </td>
+                    <td style={{ color: "var(--muted)" }}>{p.supplier_name ?? "—"}</td>
+                    <td className="cell-num">{money(p.base_price)}</td>
+                    <td className="cell-num">{money(p.loaded_expense)}</td>
+                    <td className="cell-num" style={{ fontWeight: 700 }}>{money(p.final_cost)}</td>
                     <td className="cell-num">{money(p.default_sale_price)}</td>
-                    <td className="cell-num">{money(p.default_unit_cost)}</td>
-                    <td className="cell-num">{qty(p.reorder_level)}</td>
-                    <td className="cell-num">{qty(p.total_qty)}</td>
+                    <td className="cell-num">{Number(p.unit_weight_kg) > 0 ? qty(p.unit_weight_kg) : "—"}</td>
+                    <td className="cell-num">{qty(p.qty_available)}</td>
+                    <td className="cell-num">{qty(p.qty_sold)}</td>
+                    <td className="cell-num">{qty(p.qty_returned)}</td>
                     <td className="cell-num">{money(p.total_value)}</td>
                     <td>
                       <span className={`badge badge-${String(p.is_active) === "true" ? "posted" : "cancelled"}`}>

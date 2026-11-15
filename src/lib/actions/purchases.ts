@@ -10,6 +10,15 @@ type LineInput = {
   rate: number;
   discount?: number;
   tax_rate?: number;
+  weight_kg?: number;
+};
+/** مصروف شحنة: payee فارغ = مستحق للمورد الأساسي، t:معرّف = يُدفع من صندوق/بنك، s:معرّف = مستحق لمورد آخر */
+type ExpenseInput = {
+  kind: "freight" | "customs" | "transport" | "insurance" | "other";
+  description?: string;
+  amount: number;
+  alloc_basis?: "default" | "qty" | "weight" | "value";
+  payee?: string;
 };
 type PaymentInput = { method: "cash" | "bank"; treasury_account_id: string; amount: number };
 
@@ -20,6 +29,7 @@ export async function savePurchaseInvoice(
   const id = nullable(formData, "id");
   const lines = parseLines<LineInput>(formData);
   const payments = parseLines<PaymentInput>(formData, "payments");
+  const expenses = parseLines<ExpenseInput>(formData, "expenses").filter((e) => e.amount > 0);
 
   if (lines.length === 0) return { error: "أضف صنفًا واحدًا على الأقل" };
   if (lines.some((l) => !l.product_id)) return { error: "اختر المنتج في كل سطر" };
@@ -27,6 +37,13 @@ export async function savePurchaseInvoice(
   const branchId = str(formData, "branch_id");
   const supplierId = str(formData, "supplier_id");
   if (!supplierId) return { error: "اختر المورد" };
+  const allocMethod = str(formData, "alloc_method") || "qty";
+  if (!["qty", "weight", "value"].includes(allocMethod)) return { error: "طريقة التوزيع غير صحيحة" };
+  const usesWeight =
+    allocMethod === "weight" || expenses.some((e) => e.alloc_basis === "weight");
+  if (usesWeight && expenses.length > 0 && lines.some((l) => !(Number(l.weight_kg) > 0))) {
+    return { error: "التوزيع حسب الوزن يتطلب إدخال وزن كل سطر" };
+  }
 
   const { data, error } = await run("purchases.create", async (client, userId) => {
     let invoiceId = id;
@@ -38,23 +55,24 @@ export async function savePurchaseInvoice(
       await client.query(
         `update purchase_invoices
             set invoice_date = $2, supplier_id = $3, branch_id = $4, is_central = $5,
-                supplier_ref_no = $6, shipping_cost = $7, notes = $8
+                supplier_ref_no = $6, notes = $7, shipment_no = $8, carrier = $9, alloc_method = $10
           where id = $1`,
         [invoiceId, str(formData, "invoice_date"), supplierId, branchId, isCentral,
-         nullable(formData, "supplier_ref_no"), num(formData, "shipping_cost"),
-         nullable(formData, "notes")],
+         nullable(formData, "supplier_ref_no"), nullable(formData, "notes"),
+         nullable(formData, "shipment_no"), nullable(formData, "carrier"), allocMethod],
       );
       await client.query("delete from purchase_invoice_lines where invoice_id = $1", [invoiceId]);
       await client.query("delete from purchase_invoice_payments where invoice_id = $1", [invoiceId]);
+      await client.query("delete from purchase_invoice_expenses where invoice_id = $1", [invoiceId]);
     } else {
       const { rows } = await client.query(
         `insert into purchase_invoices (invoice_no, invoice_date, supplier_id, branch_id, is_central,
-                                        supplier_ref_no, shipping_cost, notes, created_by)
-         values (next_document_number('purchase_invoice', $1, $2::date), $2, $3, $1, $4, $5, $6, $7, $8)
+                                        supplier_ref_no, notes, shipment_no, carrier, alloc_method, created_by)
+         values (next_document_number('purchase_invoice', $1, $2::date), $2, $3, $1, $4, $5, $6, $7, $8, $9, $10)
          returning id`,
         [branchId, str(formData, "invoice_date"), supplierId, isCentral,
-         nullable(formData, "supplier_ref_no"), num(formData, "shipping_cost"),
-         nullable(formData, "notes"), userId],
+         nullable(formData, "supplier_ref_no"), nullable(formData, "notes"),
+         nullable(formData, "shipment_no"), nullable(formData, "carrier"), allocMethod, userId],
       );
       invoiceId = rows[0].id;
     }
@@ -62,9 +80,22 @@ export async function savePurchaseInvoice(
     for (const [i, l] of lines.entries()) {
       await client.query(
         `insert into purchase_invoice_lines (invoice_id, line_no, product_id, quantity,
-                                             unit_cost, discount, tax_rate)
+                                             unit_cost, discount, tax_rate, weight_kg)
+         values ($1, $2, $3, $4, $5, $6, $7, $8)`,
+        [invoiceId, i + 1, l.product_id, l.quantity, l.rate, l.discount ?? 0, l.tax_rate ?? 0,
+         l.weight_kg ?? 0],
+      );
+    }
+    for (const e of expenses) {
+      const payee = e.payee ?? "";
+      const treasuryId = payee.startsWith("t:") ? payee.slice(2) : null;
+      const supplierPayee = payee.startsWith("s:") ? payee.slice(2) : null;
+      await client.query(
+        `insert into purchase_invoice_expenses (invoice_id, kind, description, amount, alloc_basis,
+                                                treasury_account_id, supplier_id)
          values ($1, $2, $3, $4, $5, $6, $7)`,
-        [invoiceId, i + 1, l.product_id, l.quantity, l.rate, l.discount ?? 0, l.tax_rate ?? 0],
+        [invoiceId, e.kind, e.description?.trim() || null, e.amount, e.alloc_basis ?? "default",
+         treasuryId, supplierPayee],
       );
     }
     for (const p of payments) {

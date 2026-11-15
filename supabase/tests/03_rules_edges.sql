@@ -29,8 +29,10 @@ begin
   insert into suppliers (code, name) values ('SX','مورد') returning id into sup;
   insert into customers (code, name, branch_id, credit_limit)
   values ('CX','عميل محدود', b1, 100) returning id into cus;
-  insert into products (code, name_ar, default_sale_price, default_unit_cost)
-  values ('X1','منتج المتوسط', 30, 10) returning id into pid;
+  -- هذه المجموعة تختبر طريقة المتوسط المرجح (الخيار البديل لـ FIFO)
+  perform set_valuation_method('wavg');
+  insert into products (code, name_ar, default_sale_price, default_unit_cost, branch_id)
+  values ('X1','منتج المتوسط', 30, 10, b1) returning id into pid;
 
   -- ===================== 1) المتوسط المرجح المتحرك ==========================
   insert into purchase_invoices (invoice_no, invoice_date, supplier_id, branch_id)

@@ -36,6 +36,14 @@ export default async function PurchaseInvoicePage({
       where l.invoice_id = $1 order by l.line_no`,
     [id],
   );
+  const expenses = await queryAs<Record<string, string>>(
+    `select e.*, t.name_ar as treasury_name, s.name as payee_supplier
+       from purchase_invoice_expenses e
+       left join treasury_accounts t on t.id = e.treasury_account_id
+       left join suppliers s on s.id = e.supplier_id
+      where e.invoice_id = $1 order by e.seq`,
+    [id],
+  );
   const payments = await queryAs<Record<string, string>>(
     `select pay.*, t.name_ar as treasury_name from purchase_invoice_payments pay
        join treasury_accounts t on t.id = pay.treasury_account_id
@@ -44,6 +52,23 @@ export default async function PurchaseInvoicePage({
   );
   const settings = await getSettings();
   const taxEnabled = Boolean(settings.tax_enabled);
+  const hasExpenses = expenses.length > 0;
+  const owedExpenses = expenses
+    .filter((e) => !e.treasury_account_id && !e.supplier_id)
+    .reduce((a, e) => a + Number(e.amount), 0);
+  const methodLabel: Record<string, string> = {
+    qty: "بالتساوي على القطع",
+    weight: "حسب الوزن",
+    value: "حسب القيمة",
+    default: "كما في الشحنة",
+  };
+  const kindLabel: Record<string, string> = {
+    freight: "شحن",
+    customs: "تخليص جمركي",
+    transport: "نقل",
+    insurance: "تأمين",
+    other: "أخرى",
+  };
   const isDraft = invoice.status === "draft";
   const isPosted = invoice.status === "posted";
 
@@ -92,6 +117,8 @@ export default async function PurchaseInvoicePage({
             ...(invoice.supplier_ref_no
               ? [{ label: "رقم فاتورة المورد", value: invoice.supplier_ref_no }]
               : []),
+            ...(invoice.shipment_no ? [{ label: "رقم الشحنة", value: invoice.shipment_no }] : []),
+            ...(invoice.carrier ? [{ label: "جهة الشحن", value: invoice.carrier }] : []),
           ]}
         />
 
@@ -103,10 +130,12 @@ export default async function PurchaseInvoicePage({
               <th>الصنف</th>
               <th className="cell-num">الكمية</th>
               <th className="cell-num">تكلفة الوحدة</th>
+              {hasExpenses ? <th className="cell-num">الوزن (كجم)</th> : null}
               <th className="cell-num">الخصم</th>
               {taxEnabled ? <th className="cell-num">الضريبة</th> : null}
               <th className="cell-num">الإجمالي</th>
-              <th className="cell-num">التكلفة بعد الشحن</th>
+              {hasExpenses ? <th className="cell-num">نصيب المصاريف</th> : null}
+              <th className="cell-num">التكلفة النهائية للقطعة</th>
             </tr>
           </thead>
           <tbody>
@@ -117,14 +146,56 @@ export default async function PurchaseInvoicePage({
                 <td>{l.product_name}</td>
                 <td className="cell-num">{qty(l.quantity)}</td>
                 <td className="cell-num">{money(l.unit_cost)}</td>
+                {hasExpenses ? <td className="cell-num">{qty(l.weight_kg)}</td> : null}
                 <td className="cell-num">{money(l.discount)}</td>
                 {taxEnabled ? <td className="cell-num">{money(l.tax_amount)}</td> : null}
                 <td className="cell-num">{money(l.line_total)}</td>
-                <td className="cell-num" style={{ color: "var(--muted)" }}>{money(l.landed_unit_cost)}</td>
+                {hasExpenses ? <td className="cell-num">{money(l.alloc_expense)}</td> : null}
+                <td className="cell-num" style={{ fontWeight: 600 }}>{money(l.landed_unit_cost)}</td>
               </tr>
             ))}
           </tbody>
         </table>
+
+        {hasExpenses ? (
+          <div style={{ marginTop: 18 }}>
+            <div style={{ fontWeight: 700, marginBottom: 6, fontSize: 14 }}>
+              مصاريف الشحنة — التوزيع {methodLabel[invoice.alloc_method] ?? ""}
+            </div>
+            <table className="table" style={{ fontSize: 13 }}>
+              <thead>
+                <tr>
+                  <th>النوع</th>
+                  <th>البيان</th>
+                  <th>أساس التوزيع</th>
+                  <th>الجهة الدائنة</th>
+                  <th className="cell-num">المبلغ</th>
+                </tr>
+              </thead>
+              <tbody>
+                {expenses.map((e) => (
+                  <tr key={e.id}>
+                    <td>{kindLabel[e.kind] ?? e.kind}</td>
+                    <td>{e.description ?? "—"}</td>
+                    <td>{methodLabel[e.alloc_basis] ?? e.alloc_basis}</td>
+                    <td>
+                      {e.treasury_name
+                        ? `مدفوع من ${e.treasury_name}`
+                        : e.payee_supplier
+                          ? `مستحق لـ ${e.payee_supplier}`
+                          : "المورد الأساسي"}
+                    </td>
+                    <td className="cell-num">{money(e.amount)}</td>
+                  </tr>
+                ))}
+                <tr style={{ fontWeight: 700 }}>
+                  <td colSpan={4}>إجمالي المصاريف الموزعة على الأصناف</td>
+                  <td className="cell-num">{money(invoice.shipping_cost)}</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        ) : null}
 
         <div style={{ display: "flex", justifyContent: "space-between", gap: 24, marginTop: 18, flexWrap: "wrap" }}>
           <div style={{ minWidth: "min(100%, 240px)", flex: 1 }}>
@@ -166,8 +237,8 @@ export default async function PurchaseInvoicePage({
                 </tr>
               ) : null}
               <tr>
-                <td style={{ padding: "5px 0", color: "var(--muted)" }}>الشحن</td>
-                <td className="cell-num">{money(invoice.shipping_cost)}</td>
+                <td style={{ padding: "5px 0", color: "var(--muted)" }}>مصاريف مستحقة للمورد الأساسي</td>
+                <td className="cell-num">{money(owedExpenses)}</td>
               </tr>
               <tr style={{ fontWeight: 700, fontSize: 15 }}>
                 <td style={{ padding: "8px 0", borderTop: "1px solid var(--border)" }}>الإجمالي النهائي</td>

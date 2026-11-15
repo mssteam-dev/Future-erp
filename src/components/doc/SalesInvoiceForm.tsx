@@ -5,6 +5,7 @@ import { saveSalesInvoice } from "@/lib/actions/sales";
 import LineTable, {
   type DocLine,
   type ProductOption,
+  dropForeignProducts,
   emptyLine,
   lineNet,
   lineTax,
@@ -130,7 +131,10 @@ export default function SalesInvoiceForm({
               name="branch_id"
               className="select"
               value={branchId}
-              onChange={(e) => setBranchId(e.target.value)}
+              onChange={(e) => {
+                setBranchId(e.target.value);
+                setLines(dropForeignProducts(lines, products, e.target.value));
+              }}
               required
             >
               {branches.map((b) => (
@@ -176,6 +180,7 @@ export default function SalesInvoiceForm({
           lines={lines}
           setLines={setLines}
           products={products}
+          branchId={branchId}
           taxEnabled={taxEnabled}
           defaultTaxRate={defaultTaxRate}
           stock={stockByBranch[branchId] ?? {}}
