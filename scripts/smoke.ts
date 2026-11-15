@@ -58,8 +58,6 @@ const ROUTES: [string, string][] = [
   ["/reports/transfers", "التحويلات بين الجهات"],
   ["/reports/period-close", "تقرير إقفال شهر"],
   ["/expenses/prepaid", "المصاريف المدفوعة مقدمًا"],
-  ["/website/menu", "منيو الموقع"],
-  ["/website/branches", "فروع الموقع وساعات العمل"],
   ["/settings/opening", "الأرصدة الافتتاحية"],
   ["/settings", "إعدادات الشركة"],
   ["/settings/branches", "الشركة الأم والفروع"],
